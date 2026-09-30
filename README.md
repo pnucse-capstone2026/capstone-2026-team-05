@@ -862,59 +862,40 @@ The main graph-composition experiment compares four graph variants:
 * **G2:** DDI + Drug-Disease relations
 * **G3:** DDI + Drug-Gene/Protein + Drug-Disease relations
 
-The final graph-composition experiment uses five random seeds for each graph variant. All variants use the same DDI split, R-GCN architecture, training configuration, and filtered ranking protocol.
+Each graph variant was evaluated using five random seeds (42, 43, 44, 45, and 46). All variants used the same DDI split, R-GCN architecture, training configuration, and full filtered-ranking evaluation protocol.
 
-The authoritative five-seed results are stored in:
+The final five-seed experiment evaluated 267,228 ranking queries using MRR, Hits@1, Hits@5, and Hits@10.
+
+The complete experiment summary is available at:
 
 ```text
 results/live_5seed/final_experiment_summary.json
 ```
 
-| Graph | Composition                            |                   MRR |                Hits@1 |                Hits@5 |               Hits@10 |
-| ----- | -------------------------------------- | --------------------: | --------------------: | --------------------: | --------------------: |
-| G0    | DDI only                               | See five-seed summary | See five-seed summary | See five-seed summary | See five-seed summary |
-| G1    | DDI + Drug-Gene/Protein                | See five-seed summary | See five-seed summary | See five-seed summary | See five-seed summary |
-| G2    | DDI + Drug-Disease                     | See five-seed summary | See five-seed summary | See five-seed summary | See five-seed summary |
-| G3    | DDI + Drug-Gene/Protein + Drug-Disease | See five-seed summary | See five-seed summary | See five-seed summary | See five-seed summary |
+| Graph | Composition                            |                 MRR |              Hits@1 |              Hits@5 |             Hits@10 |
+| ----- | -------------------------------------- | ------------------: | ------------------: | ------------------: | ------------------: |
+| G0    | DDI only                               | 0.527284 ± 0.006373 | 0.480464 ± 0.005801 | 0.572694 ± 0.007746 | 0.609447 ± 0.009457 |
+| G1    | DDI + Drug-Gene/Protein                | 0.530969 ± 0.007414 | 0.484194 ± 0.007010 | 0.575418 ± 0.007907 | 0.612683 ± 0.007986 |
+| G2    | DDI + Drug-Disease                     | 0.526776 ± 0.007482 | 0.480197 ± 0.006691 | 0.571716 ± 0.008899 | 0.608608 ± 0.009758 |
+| G3    | DDI + Drug-Gene/Protein + Drug-Disease | 0.534209 ± 0.006288 | 0.486290 ± 0.005899 | 0.580468 ± 0.007000 | 0.618074 ± 0.007312 |
 
-The five-seed results are used as the primary evidence for evaluating the robustness of the graph-composition experiment. The seed-44 checkpoint described above is a verified model artifact for the lightweight application runtime and should not be treated as the sole estimate of the graph-composition effect.
+### Primary Result
 
----
-
-### Relation Ablation Analysis (3-Seed)
-
-The project also evaluates individual biomedical relation families through A1–A7 experiments. This analysis uses three random seeds per experiment.
-
-| Experiment | Relation         |                 MRR |     Δ MRR | Positive Seeds |
-| ---------- | ---------------- | ------------------: | --------: | -------------: |
-| Baseline   | G0               | 0.529118 ± 0.008136 |         — |              — |
-| A1         | Target           | 0.535154 ± 0.009967 | +0.006036 |            2/3 |
-| A2         | Enzyme           | 0.527979 ± 0.002269 | −0.001138 |            1/3 |
-| A3         | Transporter      | 0.532645 ± 0.010348 | +0.003528 |            3/3 |
-| A4         | Carrier          | 0.535263 ± 0.005680 | +0.006145 |            3/3 |
-| A5         | Indication       | 0.535659 ± 0.008666 | +0.006542 |            2/3 |
-| A6         | Contraindication | 0.525807 ± 0.003087 | −0.003311 |            1/3 |
-| A7         | Off-label use    | 0.510576 ± 0.038774 | −0.018541 |            1/3 |
-
-### Relation Ablation Figure
-
-![Relation Ablation Results](figures/relation_ablation_delta_mrr_3seed.png)
-
-The relation ablation results show that the measured contribution of biomedical relation families is not uniform in this experimental setting. Some relation families are associated with higher measured ranking performance, while others are not.
-
-These results describe associations observed under the specified experimental conditions and should not be interpreted as causal effects.
-
----
-
-### Case Study Visualization
-
-![Case Study Ranking](figures/case_study_rank_chart.png)
-
-The corresponding case-study ranking data are available in:
+G3 achieved the highest mean performance among the four graph variants:
 
 ```text
-case_study_ranks.csv
+G3 mean MRR:                  0.534209
+G3 MRR standard deviation:    0.006288
+Improvement over G0:          +0.006924 MRR
+Relative MRR improvement:     +1.31%
+Seeds outperforming G0:       5/5
 ```
+
+G3 outperformed the DDI-only G0 baseline in all five random seeds across MRR, Hits@1, Hits@5, and Hits@10.
+
+These results provide robustness evidence for the effect of graph composition under the specified experimental setting. Statistical significance is not claimed.
+
+The seed-44 checkpoint used for the verified lightweight application runtime is a specific model artifact and should not be treated as the sole estimate of the graph-composition effect. The five-seed results above are the primary results for the G0–G3 graph-composition experiment.
 
 ---
 
@@ -997,11 +978,14 @@ Contains web application-related components.
 
 ## 5.1. Installation and Execution Procedure
 
-CHEERS provides two different execution environments.
+CHEERS provides two execution environments:
+
+1. **Full Research / Training Environment** for model training and experimental reproduction
+2. **Lightweight Web Application** for the final demonstration and inference
 
 ### A. Full Research / Training Environment
 
-The original training environment used:
+The original research and training environment used:
 
 ```text
 Python 3.10.20
@@ -1010,7 +994,7 @@ PyTorch Geometric 2.5.3
 NumPy 1.26.4
 ```
 
-The original environment was configured as:
+The original research environment was configured at:
 
 ```text
 /workspace/primekg_ddi_rgcn
@@ -1022,9 +1006,9 @@ with the Conda environment:
 primekg-rgcn
 ```
 
-The original training environment used NVIDIA GPUs.
+The original training pipeline used NVIDIA GPUs.
 
-The full preprocessing and retraining pipeline is **not completely self-contained in the portable repository**.
+The full preprocessing and retraining pipeline is **not completely self-contained in the portable repository**. Therefore, the original research environment and data preparation process are not required for running the final lightweight application.
 
 The original research notebooks included:
 
@@ -1038,11 +1022,13 @@ The original research notebooks included:
 06_finalize_project
 ```
 
+These notebooks document the research and experimental workflow but are not required for the lightweight application.
+
 ---
 
 ### B. Lightweight Web Application
 
-The final application uses:
+The final CHEERS web application uses:
 
 ```text
 FastAPI
@@ -1053,7 +1039,7 @@ CSS
 Vanilla JavaScript
 ```
 
-The lightweight runtime does not require:
+The lightweight runtime does **not** require:
 
 * PyTorch
 * PyTorch Geometric
@@ -1062,9 +1048,11 @@ The lightweight runtime does not require:
 * React
 * Node.js
 * npm
-* external CDN
+* External CDN
 
 ### Lightweight Runtime Files
+
+The main model runtime artifacts are located in:
 
 ```text
 final_release/lightweight_runtime/
@@ -1074,25 +1062,23 @@ final_release/lightweight_runtime/
 └── manifest
 ```
 
-The main scoring operation is based on:
+The runtime performs lightweight NumPy-based scoring using the exported model artifacts:
 
 ```text
 query_embedding @ (candidate_embeddings * ddi_relation).T
 ```
 
-The runtime was verified against the final G3/seed-44 inference output.
-
----
+The lightweight runtime was verified against the G3/seed-44 model inference output.
 
 ### G3 Context Runtime
+
+The graph-context runtime is located at:
 
 ```text
 final_release/g3_context_runtime/
 ```
 
-contains relation-preserving graph context information used by the application.
-
-The runtime contains:
+It contains relation-preserving support information used by the application:
 
 ```text
 68,284 total forward support rows
@@ -1100,19 +1086,11 @@ The runtime contains:
 42,631 Drug-Disease rows
 ```
 
----
+### Running the Web Application
 
-### Running the Application
+From the project root, install the lightweight application dependencies according to the project's dependency configuration and start the FastAPI application using the provided application entry point.
 
-From the project root:
-
-```bash
-cd CHEERS
-```
-
-Then start the FastAPI application according to the provided application entry point.
-
-The application provides:
+The application exposes the following main endpoints:
 
 ```text
 /
@@ -1128,15 +1106,17 @@ The application provides:
  /docs
 ```
 
-The exact host/port configuration should follow the current project configuration files.
+The `/docs` endpoint provides the automatically generated FastAPI API documentation after the server is running.
+
+> **Note:** The exact launch command and host/port configuration should follow the current application entry point and dependency configuration included in the repository.
 
 ---
 
 ## 5.2. Troubleshooting
 
-### Problem 1. Missing Python dependencies
+### Problem 1. Missing Python Dependencies
 
-If running the full research environment, verify:
+For the full research environment, verify the Python version:
 
 ```bash
 python --version
@@ -1148,49 +1128,72 @@ Expected:
 Python 3.10.20
 ```
 
-For the full training environment, verify the installed versions of PyTorch and PyTorch Geometric.
+For model training, also verify that the required PyTorch and PyTorch Geometric versions are installed.
+
+For the lightweight application, install only the dependencies required by the application environment.
 
 ---
 
-### Problem 2. GPU/CUDA errors
+### Problem 2. GPU or CUDA Errors
 
-The full training environment requires a compatible PyTorch/CUDA configuration.
+The full research and training environment requires a compatible NVIDIA GPU, CUDA configuration, and PyTorch installation.
 
 The lightweight runtime does **not** require CUDA or a GPU.
 
-For demonstration purposes, use the lightweight runtime when possible.
+For final demonstration and application testing, use the lightweight runtime whenever possible.
 
 ---
 
-### Problem 3. Missing model artifacts
+### Problem 3. Missing Model Artifacts
 
-Check:
+Verify that the lightweight runtime files are present:
 
 ```text
 final_release/lightweight_runtime/
 ```
 
-and:
+For the original research checkpoints, check:
 
 ```text
 checkpoints/
 ```
 
-The portable inference application is based on exported runtime artifacts rather than requiring the original training checkpoint for every request.
+The lightweight application uses exported runtime artifacts and does not require loading the original PyTorch training checkpoint for normal inference.
 
 ---
 
-### Problem 4. Port already in use
+### Problem 4. Port Already in Use
 
-If the configured port is already occupied, stop the existing process or change the application port according to the current FastAPI launch configuration.
+If the configured application port is already occupied, stop the process currently using the port or change the application port according to the FastAPI launch configuration.
 
 ---
 
-### Problem 5. External evidence unavailable
+### Problem 5. External Evidence Is Unavailable
 
-The FDA/PubMed evidence feature requires network access to the external services.
+The FDA/PubMed evidence feature requires network access to the corresponding external services.
 
-If external retrieval fails, the model prediction and graph context components remain conceptually separate from the external evidence layer.
+If external evidence retrieval is unavailable, the DDI prediction and graph-context components remain independent of the external evidence layer. The model inference itself does not depend on successful FDA/PubMed retrieval.
+
+---
+
+### Problem 6. Application Starts but Prediction Fails
+
+Verify that the lightweight runtime artifacts are available and that the application can access:
+
+```text
+final_release/lightweight_runtime/ddi_runtime_embeddings.npz
+final_release/lightweight_runtime/drug_metadata.csv
+final_release/lightweight_runtime/known_positive_mask_packed.npz
+```
+
+Also check the application health and model endpoints:
+
+```text
+/api/health
+/api/model
+```
+
+If the problem persists, check the server logs for missing files, invalid paths, or dependency errors.
 
 ---
 
@@ -1245,27 +1248,13 @@ The CHEERS project was collaboratively developed by three team members. While al
 * Integrated local biomedical metadata, entity information, and relationship-detail features into the CHEERS web application.
 * Contributed to web-application integration, debugging, quality assurance, reproducibility verification, result interpretation, and final report preparation.
 
-### 7.2. Team Member Reflections
-
-Byambasuren Tuvshinjargal
-
-Through this project, I gained practical experience in biomedical knowledge graph construction, graph neural networks, and web application development. I also learned the importance of reproducible experiments and collaboration when developing a research-based system.
-
-Galbadrakh Buyandelger
-
-This project helped me understand how different knowledge graph representations and embedding models can affect link prediction performance. I gained valuable experience in data preprocessing, model evaluation, and collaborative research.
-
-Bavuujav Delgerbayar
-
-Through this project, I gained experience in relation-level analysis, graph-based visualization, and system integration. I learned how experimental results can be connected to an interactive application and how collaboration contributes to completing a complex project.
-
 ---
 
 # 8. References and Sources
 
 ## Biomedical Knowledge Graph
 
-* PrimeKG
+* PrimeKG — Precision Medicine Knowledge Graph
 
 ## Drug–Drug Interaction Data
 
@@ -1273,12 +1262,13 @@ Through this project, I gained experience in relation-level analysis, graph-base
 
 ## External Evidence
 
-* U.S. Food and Drug Administration openFDA
-* PubMed / National Library of Medicine
+* U.S. Food and Drug Administration — openFDA
+* National Library of Medicine — PubMed
 
 ## Graph Neural Network
 
 * Relational Graph Convolutional Network (R-GCN)
+* Schlichtkrull, M., Kipf, T. N., Bloem, P., van den Berg, R., Titov, I., & Welling, M. (2018). *Modeling Relational Data with Graph Convolutional Networks.*
 
 ## Software and Frameworks
 
@@ -1289,135 +1279,10 @@ Through this project, I gained experience in relation-level analysis, graph-base
 
 ## Project Resources
 
-The repository also includes:
+The repository includes:
 
 ```text
 THIRD_PARTY_NOTICES.md
 ```
 
 for third-party software and resource notices.
-
----
-
-# Research Results and Interpretation
-
-## Graph Composition Experiment
-
-The final graph-composition experiment uses the current **five-seed** result summary stored at:
-
-```text
-results/live_5seed/final_experiment_summary.json
-```
-
-This five-seed analysis is the authoritative result for the final G0–G3 graph-composition experiment.
-
-The older three-seed graph-composition values that appeared in earlier project documentation are retained only as historical project-stage results and should not be treated as the final graph-composition result.
-
----
-
-## Relation Ablation Experiment
-
-The A1–A7 relation-family ablation remains a three-seed analysis.
-
-The experiment investigates whether individual biomedical relation families provide useful contextual information for the DDI prediction task.
-
-The results demonstrate that the contribution of relation families varies across the experimental conditions.
-
----
-
-# Lightweight Inference
-
-The lightweight runtime uses the final verified model export.
-
-The core scoring operation is:
-
-```text
-query_embedding @ (candidate_embeddings * ddi_relation).T
-```
-
-This allows the final model to be demonstrated without requiring the complete original training environment.
-
----
-
-# Reproducibility
-
-CHEERS provides two levels of reproducibility.
-
-### Level 1 — Verified Lightweight Demonstration
-
-The repository supports:
-
-* lightweight inference
-* drug search
-* DDI ranking
-* known-positive filtering
-* graph context exploration
-* external evidence retrieval
-* verification information
-
-### Level 2 — Full Research Retraining
-
-Full preprocessing and retraining require the original research environment and source-data preparation.
-
-The complete original training pipeline is therefore not represented as a single self-contained one-command reproduction environment.
-
----
-
-# Limitations
-
-The following limitations should be considered when interpreting the results.
-
-1. The experiment is based on PrimeKG.
-2. The target relation is PrimeKG's `drug_drug` relation.
-3. The target relation is displayed as “synergistic interaction” in the application.
-4. The study evaluates one principal GNN architecture, R-GCN.
-5. Current graph-composition robustness is based on five random seeds.
-6. Relation-family ablation results are based on three seeds.
-7. No statistical significance testing is included.
-8. The experiment is transductive.
-9. Unobserved pairs used for negative sampling are not confirmed negative interactions.
-10. Biomedical knowledge graphs may contain missing or biased information.
-11. Raw model scores are not calibrated probabilities.
-12. Graph context does not establish causality.
-13. A predicted link does not confirm a clinical drug interaction.
-14. Full preprocessing and retraining are not completely contained in the portable application.
-15. The application is intended for research and educational use only.
-
----
-
-# Safety and Responsible Use
-
-CHEERS is a **research and educational demonstration**.
-
-The model output represents a learned ranking from a biomedical knowledge graph and should not be interpreted as a clinical recommendation.
-
-The system must not be used as a basis for:
-
-* prescribing medication
-* stopping medication
-* changing medication dosage
-* determining whether a drug combination is safe or dangerous
-* making clinical treatment decisions
-
-For clinical decisions, users should consult qualified healthcare professionals and appropriate authoritative medical resources.
-
----
-
-# Project Status
-
-**Research:** Completed
-**Graph Composition Experiment:** Completed
-**Relation Ablation:** Completed
-**Final Verification:** Completed
-**Lightweight Runtime:** Completed
-**Web Application:** Completed
-**Documentation:** In progress
-**Presentation / Demo Materials:** To be added
-
----
-
-# Team CHEERS
-
-**Pusan National University — Department of Computer Science**
-
-> **Effect of Biomedical Knowledge Graph Composition on R-GCN-Based Drug–Drug Interaction Prediction**
