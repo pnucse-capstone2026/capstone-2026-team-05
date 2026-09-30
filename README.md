@@ -15,7 +15,7 @@ Drug–Drug Interaction (DDI) is an important problem in biomedical and clinical
 
 Biomedical Knowledge Graphs (KGs) provide a way to represent these heterogeneous relationships as a graph. By combining multiple biomedical relation types, a knowledge graph can provide contextual information beyond direct drug–drug relationships.
 
-However, adding more biomedical information does not necessarily guarantee better DDI prediction performance. Additional relations may provide useful context, but they may also introduce noise or unnecessary graph complexity.
+However, adding more biomedical information does not necessarily guarantee better DDI prediction performance. Additional relations may provide useful contextual information, but they may also introduce noise or unnecessary graph complexity.
 
 CHEERS therefore focuses on the following research question:
 
@@ -117,7 +117,7 @@ The research scope was subsequently narrowed to:
 
 > **PrimeKG + R-GCN + Drug–Drug Interaction Prediction**
 
-This narrower scope allows graph composition to be evaluated under controlled experimental conditions.
+This narrower scope allows the effect of graph composition to be evaluated under controlled experimental conditions.
 
 ---
 
@@ -153,7 +153,7 @@ The split is:
 
 * fixed across G0–G3
 * free of train/validation/test overlap
-* symmetric-duplicate removed
+* free of symmetric duplicates
 * transductive
 
 Validation and test DDI edges are excluded from the message-passing adjacency to prevent target-edge leakage.
@@ -279,7 +279,7 @@ Validation BCE is used for checkpoint selection.
 
 The test set is not used for model selection.
 
-The final G3 seed-44 checkpoint is:
+For the verified demonstration runtime, the G3 seed-44 checkpoint is:
 
 ```text
 checkpoints/rgcn_multiseed/G3_seed44_best.pt
@@ -305,19 +305,19 @@ The evaluation metrics are:
 * Hits@5
 * Hits@10
 
-Known positive DDI pairs are filtered from the candidate ranking set.
+Known positive DDI pairs are filtered from the candidate set during ranking evaluation.
 
 ---
 
 ## 2.2. Differentiation from Existing Services
 
-CHEERS differs from conventional drug interaction lookup services in several aspects.
+CHEERS differs from conventional drug interaction lookup approaches in several aspects.
 
-### 1. Controlled knowledge graph composition experiment
+### 1. Controlled Knowledge Graph Composition Experiment
 
 Rather than only retrieving known DDI information, CHEERS investigates how different biomedical graph compositions affect an R-GCN model.
 
-### 2. Same model and evaluation conditions
+### 2. Same Model and Evaluation Conditions
 
 The G0–G3 comparison keeps the following fixed:
 
@@ -329,15 +329,15 @@ The G0–G3 comparison keeps the following fixed:
 
 Therefore, graph composition is the primary experimental variable.
 
-### 3. Relation-level ablation
+### 3. Relation-Level Ablation
 
 The project also examines individual relation families through A1–A7 ablation experiments.
 
-### 4. Research-oriented prediction interface
+### 4. Research-Oriented Prediction Interface
 
 The web application allows users to explore model-generated rankings while clearly distinguishing those rankings from external biomedical evidence.
 
-### 5. Lightweight inference
+### 5. Lightweight Inference
 
 The final demonstration can run using NumPy-based inference without requiring a GPU or the original PyTorch/PyG training environment.
 
@@ -383,41 +383,51 @@ Clinical interpretation requires qualified medical professionals and appropriate
                        │ Canonical DDI Processing│
                        └────────────┬────────────┘
                                     │
-              ┌─────────────────────┼─────────────────────┐
-              │                     │                     │
-              ▼                     ▼                     ▼
-           ┌──────┐              ┌──────┐              ┌──────┐
-           │  G0  │              │  G1  │              │  G2  │
-           │ DDI  │              │ DDI  │              │ DDI  │
-           │ only │              │ +GP  │              │ +DD  │
-           └───┬──┘              └───┬──┘              └───┬──┘
-               │                     │                     │
-               └─────────────────────┼─────────────────────┘
-                                     │
-                                     ▼
-                               ┌───────────┐
-                               │    G3     │
-                               │ DDI + GP  │
-                               │    + DD   │
-                               └─────┬─────┘
+             ┌──────────────────────┼──────────────────────┐
+             │                      │                      │
+             │                      │                      │
+             ▼                      ▼                      ▼
+          ┌──────┐               ┌──────┐               ┌──────┐
+          │  G0  │               │  G1  │               │  G2  │
+          │ DDI  │               │ DDI  │               │ DDI  │
+          │ only │               │ + GP │               │ + DD │
+          └───┬──┘               └───┬──┘               └───┬──┘
+              │                      │                      │
+              │                      │                      │
+              │                  ┌───┴───┐                  │
+              │                  │  G3   │                  │
+              │                  │ DDI   │                  │
+              │                  │ + GP  │                  │
+              │                  │ + DD  │                  │
+              │                  └───┬───┘                  │
+              │                      │                      │
+              └──────────────────────┼──────────────────────┘
                                      │
                                      ▼
                               ┌─────────────┐
-                              │    R-GCN    │
-                              │ 2 Layers    │
+                              │   Same      │
+                              │   R-GCN     │
+                              │  2 Layers   │
                               └──────┬──────┘
                                      │
                                      ▼
                             ┌──────────────────┐
-                            │ Link Prediction  │
+                            │  Link Prediction │
                             └────────┬─────────┘
                                      │
                                      ▼
                          ┌────────────────────────┐
-                         │ Filtered Ranking       │
-                         │ MRR / Hits@K           │
+                         │   Filtered Ranking     │
+                         │   MRR / Hits@K         │
                          └────────────────────────┘
 ```
+
+> **GP:** Drug-Gene/Protein
+> **DD:** Drug-Disease
+
+The four graph variants are evaluated under the same R-GCN architecture, training configuration, and filtered ranking protocol. Graph composition is therefore the primary experimental variable.
+
+---
 
 ### Application Architecture
 
@@ -446,16 +456,21 @@ Clinical interpretation requires qualified medical professionals and appropriate
        └────────────────┘   └──────────────────┘
 ```
 
+The web application uses a lightweight NumPy-based runtime for model inference. External biomedical evidence is retrieved independently from openFDA and PubMed.
+
 ---
 
 ## 3.2. Technologies Used
 
-### Machine Learning
+### Machine Learning and Training
 
 * Python
 * PyTorch
 * PyTorch Geometric
 * R-GCN
+
+### Lightweight Inference
+
 * NumPy
 
 ### Backend
@@ -470,7 +485,7 @@ Clinical interpretation requires qualified medical professionals and appropriate
 * CSS
 * Vanilla JavaScript
 
-### External Data / Evidence
+### Biomedical Data and External Evidence
 
 * PrimeKG
 * openFDA
@@ -478,7 +493,7 @@ Clinical interpretation requires qualified medical professionals and appropriate
 
 ### Development Environment
 
-The original training environment was:
+The original model training environment was:
 
 ```text
 Environment: /workspace/primekg_ddi_rgcn
@@ -493,6 +508,8 @@ GPU: 4 × RTX 2080 Ti
 
 The final physical training run used an isolated GPU.
 
+> **Note:** The original PyTorch/PyG training environment is not required for the lightweight demonstration runtime. The final demonstration uses pre-exported model artifacts and NumPy-based inference.
+
 ---
 
 # 4. Development Results
@@ -502,30 +519,41 @@ The final physical training run used an isolated GPU.
 ### Research Flow
 
 ```text
-PrimeKG
-   │
-   ├── Drug–Drug Relations
-   │
-   ├── Drug–Gene/Protein Relations
-   │
-   └── Drug–Disease Relations
-           │
-           ▼
-    Graph Composition
-       G0 / G1 / G2 / G3
-           │
-           ▼
-        R-GCN
-           │
-           ▼
-    DDI Link Prediction
-           │
-           ▼
-    Filtered Ranking
-           │
-           ▼
-   MRR / Hits@K
+                         PrimeKG
+                            │
+                            ▼
+                 Canonical DDI Processing
+                            │
+              ┌─────────────┼─────────────┐
+              │             │             │
+              ▼             ▼             ▼
+             G0            G1            G2
+           DDI only      DDI + GP      DDI + DD
+              │             │             │
+              │             │             │
+              └─────────────┼─────────────┘
+                            │
+                            ▼
+                           G3
+                       DDI + GP + DD
+                            │
+                            ▼
+                    Same R-GCN Model
+                            │
+                            ▼
+                    DDI Link Prediction
+                            │
+                            ▼
+                     Filtered Ranking
+                            │
+                            ▼
+                     MRR / Hits@K
 ```
+
+The four graph variants, G0–G3, are evaluated under the same R-GCN architecture, training configuration, and filtered ranking protocol. Graph composition is therefore the primary experimental variable.
+
+*GP: Drug-Gene/Protein relations*
+*DD: Drug-Disease relations*
 
 ### Application Flow
 
@@ -541,19 +569,18 @@ Select Drug
  ▼
 DDI Prediction
  │
- ├───────────────┐
- ▼               ▼
-Top-K Ranking   Known DDI Filtering
+ ▼
+Known DDI Filtering
  │
  ▼
-Pair Context
+Top-K Ranking
  │
  ├───────────────┐
  ▼               ▼
-Graph Context   External Evidence
-                │
-                ├── openFDA
-                └── PubMed
+Pair Context   External Evidence
+ │               │
+ ▼               ├── openFDA
+Graph Context    └── PubMed
 ```
 
 ---
@@ -619,23 +646,24 @@ It is **not**:
 
 ### 4.2.3. Known-Positive Filtering
 
-Known DDI pairs are filtered from candidate results.
+Known DDI pairs are filtered from candidate results to avoid presenting already-known positive pairs as newly predicted candidates.
 
 For the final standalone inference verification:
 
 ```text
-Candidate drugs: 4,278
+Candidate drug nodes: 4,278
 Known positive pairs filtered: 1,488
-Remaining candidates: 2,789
+Remaining ranked candidates: 2,789
+Query drug itself: excluded
 ```
 
 ---
 
 ### 4.2.4. Graph Context Explorer
 
-The application provides graph context associated with predicted pairs.
+The application provides graph context associated with predicted drug pairs.
 
-For example, the G3 context runtime contains:
+For the G3 context runtime:
 
 ```text
 Total forward support rows: 68,284
@@ -669,7 +697,7 @@ Shared gene/protein entities: 3
 Shared disease entities: 30
 ```
 
-Shared gene/protein examples include:
+Examples of shared gene/protein entities include:
 
 ```text
 ALB
@@ -692,11 +720,13 @@ The evidence retrieval process does not use an LLM to generate medical conclusio
 
 For selected drug pairs, the system retrieves explicit cross-drug mentions from relevant FDA label sections and searches PubMed using both drug names.
 
-API endpoint:
+**API endpoint**
 
 ```text
 /api/evidence/pair?drug_a_id=DB01394&drug_b_id=DB01032
 ```
+
+Model predictions and external evidence are presented as separate information sources.
 
 ---
 
@@ -732,18 +762,18 @@ The web application provides information about:
 
 ### 4.2.9. Final Verification Results
 
-The final project includes several verification procedures.
+The final project includes several verification procedures to check data integrity, model behavior, runtime reproducibility, and application consistency.
 
-#### 1. Target-edge leakage check
+#### 1. Target-Edge Leakage Check
 
 ```text
 Validation target-edge leakage: 0
 Test target-edge leakage: 0
 ```
 
-#### 2. Test ranking verification
+#### 2. Test Ranking Verification
 
-A 1,000-pair test subset was evaluated in both directions:
+A 1,000-pair test subset was evaluated in both directions.
 
 ```text
 Queries: 2,000
@@ -756,7 +786,7 @@ Hits@10: 0.5870
 Median rank: 2
 ```
 
-#### 3. Positive vs. unobserved-pair sanity check
+#### 3. Positive vs. Unobserved-Pair Sanity Check
 
 ```text
 Positive mean score:       161.370407
@@ -769,9 +799,9 @@ Pairwise win rate:           97.54%
 ROC-AUC:                     0.9737
 ```
 
-These values are a sanity check against unobserved pairs and should not be interpreted as clinical performance.
+These values are used as a model-behavior sanity check against unobserved pairs and should not be interpreted as clinical performance.
 
-#### 4. Metadata resolution
+#### 4. Metadata Resolution
 
 All:
 
@@ -782,7 +812,7 @@ All:
 
 resolve to available metadata.
 
-#### 5. Checkpoint reproducibility
+#### 5. Checkpoint Reproducibility
 
 The G3 seed-44 checkpoint reproduces:
 
@@ -793,20 +823,20 @@ Hits@5:  0.588273
 Hits@10: 0.626229
 ```
 
-#### 6. Graph edge-count verification
+#### 6. Graph Edge-Count Verification
 
-The final graph variants match the expected edge counts described in the experiment configuration.
+The final graph variants match the expected edge counts specified in the experiment configuration.
 
-#### 7. Standalone inference verification
+#### 7. Standalone Inference Verification
 
-Verified query:
+A standalone lightweight inference test was performed using:
 
 ```text
-Colchicine
+Query drug: Colchicine
 DrugBank ID: DB01394
 ```
 
-Final G3/seed-44 lightweight inference produced the following Top-10 ranking after filtering known-positive pairs:
+After filtering known-positive pairs and excluding the query drug itself, the final G3/seed-44 runtime produced the following Top-10 ranking:
 
 | Rank | Drug                             | DrugBank ID |   Score |
 | ---: | -------------------------------- | ----------- | ------: |
@@ -823,9 +853,37 @@ Final G3/seed-44 lightweight inference produced the following Top-10 ranking aft
 
 ---
 
-### Relation Ablation Analysis
+### 4.2.10. Final Graph Composition Results
 
-The project also evaluates individual relation families through A1–A7 experiments.
+The main graph-composition experiment compares four graph variants:
+
+* **G0:** DDI only
+* **G1:** DDI + Drug-Gene/Protein relations
+* **G2:** DDI + Drug-Disease relations
+* **G3:** DDI + Drug-Gene/Protein + Drug-Disease relations
+
+The final graph-composition experiment uses five random seeds for each graph variant. All variants use the same DDI split, R-GCN architecture, training configuration, and filtered ranking protocol.
+
+The authoritative five-seed results are stored in:
+
+```text
+results/live_5seed/final_experiment_summary.json
+```
+
+| Graph | Composition                            |                   MRR |                Hits@1 |                Hits@5 |               Hits@10 |
+| ----- | -------------------------------------- | --------------------: | --------------------: | --------------------: | --------------------: |
+| G0    | DDI only                               | See five-seed summary | See five-seed summary | See five-seed summary | See five-seed summary |
+| G1    | DDI + Drug-Gene/Protein                | See five-seed summary | See five-seed summary | See five-seed summary | See five-seed summary |
+| G2    | DDI + Drug-Disease                     | See five-seed summary | See five-seed summary | See five-seed summary | See five-seed summary |
+| G3    | DDI + Drug-Gene/Protein + Drug-Disease | See five-seed summary | See five-seed summary | See five-seed summary | See five-seed summary |
+
+The five-seed results are used as the primary evidence for evaluating the robustness of the graph-composition experiment. The seed-44 checkpoint described above is a verified model artifact for the lightweight application runtime and should not be treated as the sole estimate of the graph-composition effect.
+
+---
+
+### Relation Ablation Analysis (3-Seed)
+
+The project also evaluates individual biomedical relation families through A1–A7 experiments. This analysis uses three random seeds per experiment.
 
 | Experiment | Relation         |                 MRR |     Δ MRR | Positive Seeds |
 | ---------- | ---------------- | ------------------: | --------: | -------------: |
@@ -842,17 +900,17 @@ The project also evaluates individual relation families through A1–A7 experime
 
 ![Relation Ablation Results](figures/relation_ablation_delta_mrr_3seed.png)
 
-The relation ablation results indicate that the contribution of biomedical relation families is not uniform. Some relation families improve the measured ranking performance in this experiment, while others do not.
+The relation ablation results show that the measured contribution of biomedical relation families is not uniform in this experimental setting. Some relation families are associated with higher measured ranking performance, while others are not.
 
-These results should be interpreted as associations observed in this experimental setting rather than causal effects.
+These results describe associations observed under the specified experimental conditions and should not be interpreted as causal effects.
 
 ---
 
 ### Case Study Visualization
 
-![Case Study Ranking](case_study_rank_chart.png)
+![Case Study Ranking](figures/case_study_rank_chart.png)
 
-The corresponding data are available in:
+The corresponding case-study ranking data are available in:
 
 ```text
 case_study_ranks.csv
@@ -883,7 +941,7 @@ CHEERS/
 └── THIRD_PARTY_NOTICES.md
 ```
 
-### Important directories
+### Important Directories
 
 ```text
 checkpoints/
@@ -919,40 +977,19 @@ Contains experiment results, including the current five-seed graph-composition s
 scripts/
 ```
 
-Contains utility and verification scripts.
+Contains utility, experiment, and verification scripts.
 
 ```text
 src/
 ```
 
-Contains research/model source code.
+Contains research and model source code.
 
 ```text
 web/
 ```
 
 Contains web application-related components.
-
----
-
-## 4.4. Industry Mentoring Feedback and Reflected Changes
-
-### Mentoring Feedback
-
-> **[To be added]**
-
-### Reflected Changes
-
-> **[To be added]**
-
-Recommended contents:
-
-* Mentor feedback
-* Problems identified during mentoring
-* Changes made to the research design
-* Changes made to the application
-* Changes made to the documentation
-* Additional verification or testing performed after mentoring
 
 ---
 
