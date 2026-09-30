@@ -1163,37 +1163,11 @@ If external retrieval fails, the model prediction and graph context components r
 
 - [Project Presentation (PDF)](docs/03.발표자료/발표자료.pdf)
 - [Project Presentation (PPTX)](docs/03.발표자료/발표자료.pptx)
-
-### Project Documentation
-
-The repository contains the research materials, experiment artifacts, verification results, and application resources required to understand the project.
-
-Important release documents include:
-
-```text
-README.md
-PORTABLE_APP_MANIFEST.json
-THIRD_PARTY_NOTICES.md
-final_release/PORTABLE_APP_MANIFEST_V2.json
-final_release/PORTABLE_APP_MANIFEST_V3.json
-```
-
 ---
 
 ## 6.2. Demonstration Video
 
 > **[YouTube Demo Video](https://www.youtube.com/watch?v=Z7AGAvI0R7Q)**
-
-The demonstration video is planned to show:
-
-1. Drug search
-2. DDI prediction
-3. Top-K ranking
-4. Known-positive filtering
-5. Graph context exploration
-6. Pair context
-7. FDA/PubMed evidence retrieval
-8. Experiment and verification information
 
 ---
 
@@ -1371,26 +1345,6 @@ The following limitations should be considered when interpreting the results.
 13. A predicted link does not confirm a clinical drug interaction.
 14. Full preprocessing and retraining are not completely contained in the portable application.
 15. The application is intended for research and educational use only.
-
----
-
-# Future Work
-
-Possible future improvements include:
-
-* More random seeds and bootstrap analysis
-* Statistical significance testing
-* Per-relation ablation with larger repetitions
-* Comparison with additional GNN/KG baselines
-* Inductive and cold-start evaluation
-* External DDI validation
-* Calibrated DDI classification
-* Integration of additional biomedical data sources
-* Broader DailyMed/openFDA evidence retrieval
-* Improved synonym-aware drug matching
-* Systematic literature review
-* Pair-level explanatory paths
-* More detailed relation semantics in the user interface
 
 ---
 
