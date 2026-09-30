@@ -1161,8 +1161,8 @@ If external retrieval fails, the model prediction and graph context components r
 
 ## 6.1. Project Introduction Materials
 
-- [Project Presentation (PDF)](docs/03.발표자료/발표자료.pdf)
-- [Project Presentation (PPTX)](docs/03.발표자료/발표자료.pptx)
+[Project Presentation (PDF)](docs/03.발표자료/발표자료.pdf)
+[Project Presentation (PPTX)](docs/03.발표자료/발표자료.pptx)
 ---
 
 ## 6.2. Demonstration Video
