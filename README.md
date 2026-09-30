@@ -1,392 +1,181 @@
-# CHEERS: PrimeKG Graph Composition + R-GCN for Drug–Drug Link Prediction
+# CHEERS
+
+### Effect of Biomedical Knowledge Graph Composition on R-GCN-Based Drug–Drug Interaction Prediction
 
 **Team CHEERS**
-**Pusan National University — Computer Science Capstone Project**
-
-> **Research Title:** *Effect of Biomedical Knowledge Graph Composition on R-GCN-Based Drug–Drug Interaction Prediction*
+**Pusan National University — Department of Computer Science**
 
 ---
 
-## Project Overview
+## 1. Project Background
 
-CHEERS is a research-oriented prototype that investigates how the composition of a biomedical knowledge graph affects **drug–drug link prediction using a Relational Graph Convolutional Network (R-GCN)**.
+### 1.1. Domestic and International Market Status and Problems
 
-The main research question is:
+Drug–Drug Interaction (DDI) is an important problem in biomedical and clinical informatics because drugs may interact with one another through shared biological targets, enzymes, transporters, diseases, and other biomedical relationships.
+
+Biomedical Knowledge Graphs (KGs) provide a way to represent these heterogeneous relationships as a graph. By combining multiple biomedical relation types, a knowledge graph can provide contextual information beyond direct drug–drug relationships.
+
+However, adding more biomedical information does not necessarily guarantee better DDI prediction performance. Additional relations may provide useful context, but they may also introduce noise or unnecessary graph complexity.
+
+CHEERS therefore focuses on the following research question:
 
 > **How does biomedical knowledge graph composition affect R-GCN-based drug–drug link prediction?**
 
-The final controlled experiment compares four graph compositions derived from **PrimeKG** while keeping the following factors fixed:
+Rather than simply building a larger graph, CHEERS evaluates how different combinations of biomedical relations affect an R-GCN model under a controlled experimental setting.
 
-* Drug–drug interaction split
-* R-GCN architecture
-* Decoder
-* Training procedure
-* Negative sampling strategy
-* Filtered ranking evaluation
+The project uses **PrimeKG** as the main biomedical knowledge graph and focuses on its `drug_drug` relation as the target prediction task.
 
-The project also provides a lightweight web application that uses an independently verified final model export for demonstration and exploration.
+In the application, this target relation is displayed as **“synergistic interaction.”**
 
-CHEERS consists of three main scopes:
-
-1. **Final graduation research experiment**
-2. **Earlier project development and research stages**
-3. **Lightweight demonstration and web application**
-
-The system is intended for **academic and research use only**. It is not a clinical decision-support system and must not be used for prescribing, discontinuing, or modifying medication.
+> **Scope:** CHEERS does not attempt to predict every clinically meaningful drug–drug interaction. The target relation is the `drug_drug` relation available in PrimeKG.
 
 ---
 
-# 1. Project Background
+### 1.2. Necessity and Expected Effects
 
-## 1.1. Global and Domestic Market Trends and Problems
+A major challenge in biomedical graph learning is determining which types of contextual information are actually useful for a prediction task.
 
-Drug–drug interactions (DDIs) are an important concern in healthcare because patients may take multiple medications simultaneously. Identifying potentially relevant drug pairs requires integrating information from different biomedical domains, including drugs, genes, proteins, diseases, indications, contraindications, and other biomedical relationships.
+Simply adding more relations can increase graph complexity, computational cost, and noise. Therefore, it is important to experimentally compare different graph compositions while keeping the prediction task and model architecture fixed.
 
-Traditional DDI information is often presented as individual drug-pair records. However, biomedical knowledge is naturally heterogeneous and interconnected. A drug may be related to multiple genes, proteins, diseases, indications, and other drugs. Therefore, a knowledge graph can provide a broader representation of the relationships surrounding a drug pair.
+CHEERS addresses this problem through a controlled comparison of four graph variants:
 
-CHEERS investigates whether incorporating such heterogeneous biomedical context into a graph neural network can improve drug–drug link prediction compared with using only direct drug–drug relationships.
+* **G0:** DDI only
+* **G1:** DDI + Drug-Gene/Protein
+* **G2:** DDI + Drug-Disease
+* **G3:** DDI + Drug-Gene/Protein + Drug-Disease
 
-The project uses **PrimeKG** as the primary biomedical knowledge graph source.
+All graph variants use the same DDI split, R-GCN architecture, decoder, training procedure, and evaluation protocol.
 
-The target relation is PrimeKG's:
+The expected contributions are:
 
-* Internal relation: `drug_drug`
-* Display relation: **synergistic interaction**
-
-The project does **not** attempt to predict every clinically relevant drug–drug interaction. Instead, it studies link prediction for the specific target relation represented in PrimeKG.
-
----
-
-## 1.2. Necessity and Expected Benefits
-
-The project is motivated by three main needs.
-
-### 1. Biomedical knowledge integration
-
-Biomedical relationships are heterogeneous and interconnected. Modeling only direct drug–drug edges may ignore useful contextual information.
-
-### 2. Controlled evaluation of graph composition
-
-Rather than simply adding as many relationships as possible, CHEERS explicitly compares different graph compositions:
-
-* DDI-only graph
-* DDI + Drug–Gene/Protein relationships
-* DDI + Drug–Disease relationships
-* Combined graph
-
-This allows the effect of graph composition to be examined under a controlled experimental setting.
-
-### 3. Research-oriented interactive exploration
-
-The project also provides a lightweight application through which users can:
-
-* Search drugs
-* Generate ranked drug-pair predictions
-* Explore graph context
-* Inspect known-positive relationships
-* Retrieve external FDA/PubMed evidence
-* Examine experiment and verification information
-
-The expected benefit is not clinical decision-making, but a reproducible environment for studying **biomedical knowledge graph composition and graph-based link prediction**.
+1. Quantifying the effect of biomedical graph composition on DDI link prediction.
+2. Identifying relation families that provide useful contextual information.
+3. Providing reproducible experimental artifacts and verification results.
+4. Demonstrating how research-oriented DDI prediction can be connected to a lightweight web application.
+5. Separating model-generated ranking results from independently retrieved FDA/PubMed evidence.
 
 ---
 
 # 2. Development Goals
 
-## 2.1. Objectives and Detailed Goals
+## 2.1. Goals and Detailed Contents
 
-The primary objective is to evaluate the effect of biomedical graph composition on R-GCN-based drug–drug link prediction.
+The main goal of CHEERS is to investigate the effect of biomedical knowledge graph composition on **R-GCN-based drug–drug link prediction**.
 
-The final research pipeline is:
+### Research Question
+
+> **How does biomedical knowledge graph composition affect R-GCN-based drug–drug link prediction?**
+
+### Overall Research Pipeline
 
 ```text
 PrimeKG
    ↓
-Canonicalize drug–drug pairs
+Canonical DDI Pair Construction
    ↓
-Create a fixed DDI train/validation/test split
+Fixed Train / Validation / Test Split
    ↓
-Construct controlled graph variants G0–G3
+G0 / G1 / G2 / G3 Graph Construction
    ↓
-Train the same R-GCN architecture
+Same R-GCN Architecture
    ↓
-Evaluate using filtered link prediction
+Filtered Link Prediction
    ↓
-Compare MRR and Hits@K across seeds
+MRR / Hits@1 / Hits@5 / Hits@10
    ↓
-Analyze relation-family contributions
+Graph Composition Comparison
 ```
 
-The detailed goals are:
+### Project Evolution
 
-1. Construct a canonical drug–drug interaction dataset from PrimeKG.
-2. Remove symmetric duplicate DDI pairs.
-3. Create one fixed train/validation/test split shared by all graph variants.
-4. Prevent validation/test DDI edges from being used in message-passing adjacency.
-5. Construct four controlled graph compositions.
-6. Train the same R-GCN architecture under the same optimization settings.
-7. Evaluate using filtered ranking metrics.
-8. Repeat experiments across multiple random seeds.
-9. Perform relation-family ablation experiments.
-10. Verify the final model and exported runtime independently.
-11. Provide a lightweight web application for research demonstration.
-
----
-
-## 2.2. Differentiation from Existing Services
-
-CHEERS differs from a conventional DDI lookup service in several ways.
-
-### Controlled graph-composition experiment
-
-The main contribution is not simply building a DDI predictor. The project explicitly compares different biomedical graph compositions while keeping the prediction task and model architecture fixed.
-
-### Heterogeneous biomedical context
-
-The final graph incorporates multiple biomedical relation families, including:
-
-* Drug–Drug
-* Drug–Gene/Protein
-* Drug–Disease
-* Indication
-* Contraindication
-* Off-label use
-* Target
-* Enzyme
-* Transporter
-* Carrier
-
-### Reproducible evaluation
-
-All graph variants use the same DDI split and the same R-GCN architecture, allowing the graph composition itself to be examined as the main experimental variable.
-
-### Lightweight inference
-
-The final demonstration runtime exports the verified model representation into a NumPy-based runtime. The local application therefore does not require PyTorch, PyTorch Geometric, CUDA, or a GPU.
-
-### External evidence separated from model prediction
-
-FDA and PubMed evidence is retrieved independently from the model score. External evidence is not treated as model output and is not generated by the prediction model itself.
-
----
-
-## 2.3. Social Value Implementation Plan
-
-CHEERS is designed as a research and educational system that can help users understand how biomedical relationships can be represented and analyzed computationally.
-
-The project emphasizes:
-
-* Transparent model limitations
-* Separation between prediction and external evidence
-* Reproducible experimental procedures
-* Responsible presentation of biomedical information
-* Avoidance of unsupported clinical claims
-
-The application explicitly communicates that:
-
-* A model score is not a clinical probability.
-* An unobserved pair is not necessarily a confirmed negative.
-* Graph relationships are descriptive rather than causal.
-* A predicted link is not equivalent to a clinically confirmed interaction.
-* Clinical decisions require qualified healthcare professionals and authoritative medical information.
-
----
-
-# 3. System Design
-
-## 3.1. System Architecture
-
-The overall CHEERS architecture can be summarized as follows:
+The project initially considered a broader clinical inference pipeline:
 
 ```text
-                         ┌─────────────────────┐
-                         │       PrimeKG       │
-                         └──────────┬──────────┘
-                                    │
-                                    ▼
-                       ┌────────────────────────┐
-                       │ DDI Canonicalization   │
-                       │ and Fixed Data Split   │
-                       └──────────┬─────────────┘
-                                  │
-                    ┌─────────────┼─────────────┐
-                    │             │             │
-                    ▼             ▼             ▼
-                   G0            G1            G2
-                    │             │             │
-                    └─────────────┼─────────────┘
-                                  ▼
-                                 G3
-                                  │
-                                  ▼
-                         ┌─────────────────┐
-                         │      R-GCN      │
-                         └────────┬────────┘
-                                  │
-                                  ▼
-                    ┌──────────────────────────┐
-                    │ Filtered Link Prediction │
-                    └────────────┬─────────────┘
-                                 │
-                     ┌───────────┴───────────┐
-                     ▼                       ▼
-              Research Results        Runtime Export
-                                             │
-                                             ▼
-                                    ┌─────────────────┐
-                                    │ FastAPI Backend │
-                                    └────────┬────────┘
-                                             │
-                                  ┌──────────┴──────────┐
-                                  ▼                     ▼
-                             Web Frontend        FDA / PubMed
+Symptoms
+   ↓
+Disease
+   ↓
+Treatment Drug
+   ↓
+Drug–Drug Interaction Warning
 ```
 
----
-
-## 3.2. Technologies Used
-
-### Research and Machine Learning
-
-* Python
-* PyTorch
-* PyTorch Geometric
-* NumPy
-* R-GCN / `RGCNConv`
-* Jupyter Notebook
-
-### Graph and Biomedical Data
+Early development considered multiple biomedical knowledge graph and embedding approaches, including:
 
 * PrimeKG
-* DrugBank identifiers
-* Biomedical relation metadata
-
-### Backend
-
+* DrugBank
+* DDInter
+* TransE
+* ComplEx
+* RotatE
+* PyKEEN
 * FastAPI
-* Uvicorn
-* Pydantic
-* Python standard library
-* NumPy
-
-### Frontend
-
-* HTML
-* CSS
-* Vanilla JavaScript
-
-The lightweight local application does not require:
-
 * React
-* Node.js
-* npm
-* PyTorch
-* PyTorch Geometric
-* CUDA
-* GPU
+* Cytoscape
 
-### External Evidence
+The research scope was subsequently narrowed to:
 
-* openFDA
-* PubMed
+> **PrimeKG + R-GCN + Drug–Drug Interaction Prediction**
 
-### Development and Version Control
-
-* Git
-* GitHub
+This narrower scope allows graph composition to be evaluated under controlled experimental conditions.
 
 ---
 
-# 4. Development Results
+### PrimeKG DDI Canonicalization
 
-## 4.1. Overall System Flow
+PrimeKG contains directed DDI rows that represent the same undirected drug pair in both directions.
 
-The complete development and inference process is organized into the following stages:
+The canonicalization process produced:
 
-```text
-PrimeKG
-  ↓
-Drug–Drug Relation Extraction
-  ↓
-Canonical DDI Pair Construction
-  ↓
-Fixed Train / Validation / Test Split
-  ↓
-Graph Variant Construction
-  ├── G0: DDI only
-  ├── G1: DDI + Drug-Gene/Protein
-  ├── G2: DDI + Drug-Disease
-  └── G3: Combined
-  ↓
-R-GCN Training
-  ↓
-Multi-seed Evaluation
-  ↓
-Relation-level Ablation
-  ↓
-Final Verification
-  ↓
-Lightweight Runtime Export
-  ↓
-FastAPI + Web Application
-```
+| Item                    |     Count |
+| ----------------------- | --------: |
+| Directed DDI rows       | 2,672,628 |
+| Unique undirected pairs | 1,336,314 |
+| Reverse duplicates      | 1,336,314 |
+| Self-loops              |         0 |
+
+The final experiment uses canonical unique DDI pairs.
 
 ---
 
-## 4.2. Functional Description and Major Feature Specifications
+### Fixed DDI Split
 
-### 4.2.1. PrimeKG DDI Canonicalization
+The same DDI split is used for every graph variant.
 
-The original PrimeKG DDI relation contains:
+| Split      |         Pairs |
+| ---------- | ------------: |
+| Train      |     1,069,080 |
+| Validation |       133,620 |
+| Test       |       133,614 |
+| **Total**  | **1,336,314** |
 
-* **2,672,628 directed rows**
-* **1,336,314 unique undirected drug pairs**
-* **1,336,314 reverse duplicates**
-* **0 self-loops**
+The split is:
 
-The project canonicalizes the DDI relation into unique undirected drug pairs before constructing the fixed evaluation split.
+* fixed across G0–G3
+* free of train/validation/test overlap
+* symmetric-duplicate removed
+* transductive
 
----
-
-### 4.2.2. Fixed DDI Split
-
-The final DDI split contains:
-
-| Split      | Number of pairs |
-| ---------- | --------------: |
-| Train      |       1,069,080 |
-| Validation |         133,620 |
-| Test       |         133,614 |
-| **Total**  |   **1,336,314** |
-
-The same split is used for G0, G1, G2, and G3.
-
-The following controls are applied:
-
-* No train/validation/test overlap
-* Symmetric duplicates removed
-* Validation and test DDI pairs excluded from message-passing adjacency
-* Same split used across all graph variants
-* Transductive evaluation setting
+Validation and test DDI edges are excluded from the message-passing adjacency to prevent target-edge leakage.
 
 ---
 
-### 4.2.3. Graph Composition
+### Graph Composition
 
-Four controlled graph variants are constructed.
+The experiment compares four graph variants.
 
-| Graph  | Composition             | Directed Edges | Active Relations |
-| ------ | ----------------------- | -------------: | ---------------: |
-| **G0** | DDI only                |      2,138,160 |                1 |
-| **G1** | DDI + Drug–Gene/Protein |      2,189,466 |                9 |
-| **G2** | DDI + Drug–Disease      |      2,223,422 |                7 |
-| **G3** | Combined graph          |      2,274,728 |               15 |
+| Variant | Composition                            | Directed Edges | Active Relations |
+| ------- | -------------------------------------- | -------------: | ---------------: |
+| **G0**  | DDI only                               |      2,138,160 |                1 |
+| **G1**  | DDI + Drug-Gene/Protein                |      2,189,466 |                9 |
+| **G2**  | DDI + Drug-Disease                     |      2,223,422 |                7 |
+| **G3**  | DDI + Drug-Gene/Protein + Drug-Disease |      2,274,728 |               15 |
 
-#### G1: Drug–Gene/Protein Context
+Additional relation counts:
 
-Forward relation counts:
+**G1 Drug-Gene/Protein forward relations**
 
-| Relation    |      Count |
+| Relation    |      Edges |
 | ----------- | ---------: |
 | Target      |     16,380 |
 | Enzyme      |      5,317 |
@@ -394,105 +183,97 @@ Forward relation counts:
 | Carrier     |        864 |
 | **Total**   | **25,653** |
 
-#### G2: Drug–Disease Context
+**G2 Drug-Disease forward relations**
 
-Forward relation counts:
-
-| Relation         |      Count |
+| Relation         |      Edges |
 | ---------------- | ---------: |
 | Indication       |      9,388 |
 | Contraindication |     30,675 |
 | Off-label use    |      2,568 |
 | **Total**        | **42,631** |
 
-#### G3: Combined Context
+**G3 additional support edges**
 
-The combined graph contains **68,284 forward support edges** from the Drug–Gene/Protein and Drug–Disease relation families.
-
----
-
-### 4.2.4. Global Relation Mapping
-
-The model uses a shared global relation mapping:
-
-| ID | Relation               |
-| -: | ---------------------- |
-|  0 | `drug_drug`            |
-|  1 | `target`               |
-|  2 | `rev_target`           |
-|  3 | `enzyme`               |
-|  4 | `rev_enzyme`           |
-|  5 | `transporter`          |
-|  6 | `rev_transporter`      |
-|  7 | `carrier`              |
-|  8 | `rev_carrier`          |
-|  9 | `indication`           |
-| 10 | `rev_indication`       |
-| 11 | `contraindication`     |
-| 12 | `rev_contraindication` |
-| 13 | `off-label use`        |
-| 14 | `rev_off-label use`    |
+> **68,284 forward support edges**
 
 ---
 
-### 4.2.5. Graph Statistics
+### Global Relation Mapping
 
-The shared graph contains:
+| ID | Relation             |
+| -: | -------------------- |
+|  0 | drug_drug            |
+|  1 | target               |
+|  2 | rev_target           |
+|  3 | enzyme               |
+|  4 | rev_enzyme           |
+|  5 | transporter          |
+|  6 | rev_transporter      |
+|  7 | carrier              |
+|  8 | rev_carrier          |
+|  9 | indication           |
+| 10 | rev_indication       |
+| 11 | contraindication     |
+| 12 | rev_contraindication |
+| 13 | off-label use        |
+| 14 | rev_off-label use    |
 
-* **13,094 nodes**
+---
+
+### Graph Nodes
+
+The final graph contains:
+
+* **13,094 shared graph nodes**
 * **4,278 candidate drug nodes**
 * **15 relation types**
 * **4,278 × 4,278 known-positive mask**
 * **2,672,628 symmetric known-positive entries**
 
-The known-positive mask is used during filtered evaluation and inference to distinguish already observed DDI pairs from remaining candidates.
-
 ---
 
-### 4.2.6. R-GCN Model
+### R-GCN Model
 
 The final model uses a two-layer Relational Graph Convolutional Network.
 
-| Parameter                |         Value |
-| ------------------------ | ------------: |
-| GNN architecture         | 2-layer R-GCN |
-| Layer                    |    `RGCNConv` |
-| Embedding dimension      |           128 |
-| Hidden dimension         |           128 |
-| Dropout                  |           0.2 |
-| Learning rate            |         0.001 |
-| Weight decay             |          1e-5 |
-| Maximum epochs           |           500 |
-| Early stopping patience  |            10 |
-| Positive samples / epoch |       100,000 |
-| Negative sampling ratio  |           1:1 |
-| Parameters               |     2,200,704 |
-
-The decoder follows a symmetric DistMult-style formulation.
+| Configuration            | Value                            |
+| ------------------------ | -------------------------------- |
+| GNN                      | 2-layer RGCNConv                 |
+| Embedding dimension      | 128                              |
+| Hidden dimension         | 128                              |
+| Dropout                  | 0.2                              |
+| Learning rate            | 0.001                            |
+| Weight decay             | 1e-5                             |
+| Maximum epochs           | 500                              |
+| Early stopping patience  | 10                               |
+| Positive samples / epoch | 100,000                          |
+| Negative sampling ratio  | 1:1                              |
+| Parameters               | 2,200,704                        |
+| Decoder                  | Symmetric DistMult-style decoder |
 
 ---
 
-### 4.2.7. Negative Sampling
+### Negative Sampling
 
-Negative samples are sampled from unobserved drug pairs.
+Negative samples are randomly sampled from **unobserved drug pairs**.
 
-Importantly:
+Therefore:
 
-> **An unobserved pair is not treated as a confirmed negative interaction.**
+> An unobserved pair is not treated as a confirmed negative interaction.
 
-The negative samples represent currently unobserved candidate pairs for the link-prediction task.
+The sampled negatives represent candidate unknown pairs rather than clinically verified non-interactions.
 
 ---
 
-### 4.2.8. Training and Model Selection
+### Training and Model Selection
 
-All graph variants use:
+All graph variants use the same:
 
-* The same DDI split
-* The same R-GCN architecture
-* The same optimization settings
-* The same negative sampling strategy
-* The same evaluation protocol
+* fixed DDI split
+* R-GCN architecture
+* optimization configuration
+* training protocol
+* evaluation procedure
 
 Validation BCE is used for checkpoint selection.
 
@@ -504,15 +285,15 @@ The final G3 seed-44 checkpoint is:
 checkpoints/rgcn_multiseed/G3_seed44_best.pt
 ```
 
-The best epoch for this checkpoint is **epoch 499**.
+The best epoch for G3 seed-44 was **499**.
 
 ---
 
-### 4.2.9. Filtered Link Prediction Evaluation
+### Filtered Ranking Evaluation
 
-The held-out test set contains:
+The test set contains:
 
-* 133,614 DDI pairs
+* 133,614 held-out DDI pairs
 * 2 directions per pair
 * 267,228 ranking queries
 * 4,278 candidate drugs per query
@@ -524,577 +305,855 @@ The evaluation metrics are:
 * Hits@5
 * Hits@10
 
-Filtered ranking removes known-positive drug pairs from candidate rankings when appropriate, preventing already observed interactions from artificially affecting the ranking of held-out pairs.
-
-The latest multi-seed graph-composition results are maintained in:
-
-```text
-results/live_5seed/final_experiment_summary.json
-```
-
-and the corresponding result artifacts under:
-
-```text
-results/
-```
-
-The latest five-seed results should be treated as the authoritative experimental summary for the final version of this repository.
+Known positive DDI pairs are filtered from the candidate ranking set.
 
 ---
 
-### 4.2.10. Relation-level Ablation
+## 2.2. Differentiation from Existing Services
 
-A separate relation-family ablation experiment evaluates the contribution of individual biomedical relation families.
+CHEERS differs from conventional drug interaction lookup services in several aspects.
 
-The relation-level experiment includes:
+### 1. Controlled knowledge graph composition experiment
 
-* A1: Target
-* A2: Enzyme
-* A3: Transporter
-* A4: Carrier
-* A5: Indication
-* A6: Contraindication
-* A7: Off-label use
+Rather than only retrieving known DDI information, CHEERS investigates how different biomedical graph compositions affect an R-GCN model.
 
-The baseline and ablation results are summarized using MRR differences.
+### 2. Same model and evaluation conditions
 
-The current project includes the corresponding analysis artifacts:
+The G0–G3 comparison keeps the following fixed:
 
-```text
-figures/relation_ablation_delta_mrr_3seed.png
-```
+* DDI split
+* R-GCN architecture
+* decoder
+* training procedure
+* filtered ranking protocol
 
-and result files under:
+Therefore, graph composition is the primary experimental variable.
 
-```text
-results/
-```
+### 3. Relation-level ablation
 
-The ablation experiments indicate that the contribution of heterogeneous context depends on the relation family. These results are interpreted as associations observed under the experimental setting rather than causal effects.
+The project also examines individual relation families through A1–A7 ablation experiments.
 
----
+### 4. Research-oriented prediction interface
 
-### 4.2.11. Final Verification
+The web application allows users to explore model-generated rankings while clearly distinguishing those rankings from external biomedical evidence.
 
-The final project includes multiple independent verification procedures.
+### 5. Lightweight inference
 
-#### 1. Target-edge leakage check
-
-Validation and test DDI target edges are checked to ensure that they do not leak into message-passing adjacency.
-
-Result:
-
-```text
-Validation leakage: 0
-Test leakage: 0
-```
-
-#### 2. Test-pair ranking sanity check
-
-A subset of 1,000 test pairs is evaluated in both directions:
-
-* 2,000 ranking queries
-* MRR: 0.502226
-* Hits@1: 0.4525
-* Hits@5: 0.5465
-* Hits@10: 0.5870
-* Median rank: 2
-
-#### 3. Positive vs. unobserved score sanity check
-
-For the verification sample:
-
-| Statistic    |   Positive | Unobserved |
-| ------------ | ---------: | ---------: |
-| Mean score   | 161.370407 |  -2.773926 |
-| Median score |   6.497307 |  -1.558111 |
-
-Additional results:
-
-* Pairwise win rate: **97.54%**
-* ROC-AUC: **0.9737**
-
-These statistics are verification results for the model output and should not be interpreted as clinical performance measures.
-
-#### 4. Metadata resolution
-
-All:
-
-* 13,094 graph nodes
-* 4,278 candidate drugs
-
-resolve to available metadata.
-
-#### 5. Checkpoint reproducibility
-
-The final G3 seed-44 checkpoint reproduces:
-
-* MRR: 0.540359
-* Hits@1: 0.490656
-* Hits@5: 0.588273
-* Hits@10: 0.626229
-
-#### 6. Graph edge-count verification
-
-The expected graph edge counts are checked against the generated tensors.
-
-#### 7. Standalone inference verification
-
-A standalone inference test was performed for:
-
-```text
-Colchicine — DB01394
-```
-
-The candidate set contains 4,278 drugs.
-
-After filtering:
-
-* Known-positive pairs: 1,488
-* Remaining candidate pairs: 2,789
-
-The verified top-ranked candidates include:
-
-| Rank | Drug                             | DrugBank ID | Raw Score |
-| ---: | -------------------------------- | ----------- | --------: |
-|    1 | Probenecid                       | DB01032     |   40.8524 |
-|    2 | Hydrocortisone                   | DB00741     |    7.9139 |
-|    3 | Ondansetron                      | DB00904     |    5.7451 |
-|    4 | Sulfinpyrazone                   | DB01138     |    5.6925 |
-|    5 | Melengestrol acetate             | DB14659     |    5.5811 |
-|    6 | Prednisone acetate               | DB14646     |    5.2154 |
-|    7 | Coumarin                         | DB04665     |    5.1917 |
-|    8 | Dicoumarol                       | DB00266     |    5.1416 |
-|    9 | Methylprednisolone hemisuccinate | DB14644     |    5.0514 |
-|   10 | Oxycodone                        | DB00497     |    4.9924 |
-
-These values are raw ranking scores and are **not probabilities, calibrated confidence values, or clinical risk scores**.
+The final demonstration can run using NumPy-based inference without requiring a GPU or the original PyTorch/PyG training environment.
 
 ---
 
-### 4.2.12. Lightweight Inference Runtime
+## 2.3. Social Value and Sustainability Plan
 
-The lightweight runtime is located at:
+CHEERS is designed as a **research and educational demonstration**, rather than a clinical decision-support system.
 
-```text
-final_release/lightweight_runtime/
-```
+The project aims to contribute to:
 
-It contains:
+* reproducible biomedical AI research
+* transparent knowledge graph experimentation
+* educational use of graph-based biomedical prediction
+* responsible presentation of AI-generated biomedical information
+* separation of model predictions and external medical evidence
 
-```text
-ddi_runtime_embeddings.npz
-drug_metadata.csv
-known_positive_mask_packed.npz
-```
+The system does not provide:
 
-The runtime uses a NumPy scoring operation conceptually equivalent to:
+* prescribing recommendations
+* medication discontinuation recommendations
+* dosage recommendations
+* definitive safe/dangerous judgments
+* clinical risk assessments
 
-```text
-query_embedding @ (candidate_embeddings * ddi_relation).T
-```
-
-The exported runtime has been independently verified against the full model for the Colchicine example.
+Clinical interpretation requires qualified medical professionals and appropriate external evidence.
 
 ---
 
-### 4.2.13. G3 Graph Context Runtime
+# 3. System Design
 
-The G3 context runtime is located at:
+## 3.1. System Architecture
 
-```text
-final_release/g3_context_runtime/
-```
-
-It preserves the heterogeneous support relations used by the final graph.
-
-Total forward support rows:
+### Overall Research Architecture
 
 ```text
-68,284
+                         ┌─────────────────────┐
+                         │       PrimeKG       │
+                         └──────────┬──────────┘
+                                    │
+                                    ▼
+                       ┌─────────────────────────┐
+                       │ Canonical DDI Processing│
+                       └────────────┬────────────┘
+                                    │
+              ┌─────────────────────┼─────────────────────┐
+              │                     │                     │
+              ▼                     ▼                     ▼
+           ┌──────┐              ┌──────┐              ┌──────┐
+           │  G0  │              │  G1  │              │  G2  │
+           │ DDI  │              │ DDI  │              │ DDI  │
+           │ only │              │ +GP  │              │ +DD  │
+           └───┬──┘              └───┬──┘              └───┬──┘
+               │                     │                     │
+               └─────────────────────┼─────────────────────┘
+                                     │
+                                     ▼
+                               ┌───────────┐
+                               │    G3     │
+                               │ DDI + GP  │
+                               │    + DD   │
+                               └─────┬─────┘
+                                     │
+                                     ▼
+                              ┌─────────────┐
+                              │    R-GCN    │
+                              │ 2 Layers    │
+                              └──────┬──────┘
+                                     │
+                                     ▼
+                            ┌──────────────────┐
+                            │ Link Prediction  │
+                            └────────┬─────────┘
+                                     │
+                                     ▼
+                         ┌────────────────────────┐
+                         │ Filtered Ranking       │
+                         │ MRR / Hits@K           │
+                         └────────────────────────┘
 ```
 
-Breakdown:
+### Application Architecture
 
 ```text
-Drug–Gene/Protein: 25,653
-Drug–Disease:      42,631
+┌─────────────────────────────────────────────────────┐
+│                    Web Frontend                     │
+│              HTML / CSS / Vanilla JS                │
+└───────────────────────┬─────────────────────────────┘
+                        │ HTTP
+                        ▼
+┌─────────────────────────────────────────────────────┐
+│                  FastAPI Backend                    │
+├─────────────────────────────────────────────────────┤
+│ Drug Search                                         │
+│ DDI Prediction                                      │
+│ Pair Context                                        │
+│ Experiment Information                              │
+│ Verification Information                            │
+│ FDA / PubMed Evidence Retrieval                     │
+└───────────────┬──────────────────┬──────────────────┘
+                │                  │
+                ▼                  ▼
+       ┌────────────────┐   ┌──────────────────┐
+       │ NumPy Runtime  │   │ External Sources │
+       │ Final G3 Model │   │ openFDA / PubMed │
+       └────────────────┘   └──────────────────┘
 ```
-
-For the Colchicine–Probenecid pair:
-
-* Colchicine node: 39
-* Probenecid node: 69
-* Shared entities: 33
-* Shared gene/protein entities: 3
-* Shared disease entities: 30
-
-Shared gene/protein relationships include:
-
-* ALB — carrier/carrier
-* CYP2C8 — enzyme/enzyme
-* CYP3A4 — enzyme/enzyme
-
-These shared entities are presented as graph context only. They are **not causal explanations** for the predicted score.
 
 ---
 
-### 4.2.14. Independent FDA and PubMed Evidence
+## 3.2. Technologies Used
 
-CHEERS separates model prediction from external evidence retrieval.
+### Machine Learning
 
-The application can retrieve evidence from:
+* Python
+* PyTorch
+* PyTorch Geometric
+* R-GCN
+* NumPy
 
-* openFDA drug labeling
+### Backend
+
+* FastAPI
+* Python standard library
+* NumPy
+
+### Frontend
+
+* HTML
+* CSS
+* Vanilla JavaScript
+
+### External Data / Evidence
+
+* PrimeKG
+* openFDA
 * PubMed
 
-The evidence retrieval process includes:
+### Development Environment
 
-1. Retrieve relevant FDA labeling information.
-2. Search for explicit cross-drug mentions.
-3. Retrieve PubMed records using a conservative query containing both drugs.
-4. Return up to five relevant records where available.
+The original training environment was:
 
-No LLM-generated summary is used as the source of the retrieved evidence.
+```text
+Environment: /workspace/primekg_ddi_rgcn
+Conda environment: primekg-rgcn
 
-The evidence endpoint is:
+Python: 3.10.20
+PyTorch: 2.2.1+cu121
+PyTorch Geometric: 2.5.3
+NumPy: 1.26.4
+GPU: 4 × RTX 2080 Ti
+```
+
+The final physical training run used an isolated GPU.
+
+---
+
+# 4. Development Results
+
+## 4.1. Overall System Flow
+
+### Research Flow
+
+```text
+PrimeKG
+   │
+   ├── Drug–Drug Relations
+   │
+   ├── Drug–Gene/Protein Relations
+   │
+   └── Drug–Disease Relations
+           │
+           ▼
+    Graph Composition
+       G0 / G1 / G2 / G3
+           │
+           ▼
+        R-GCN
+           │
+           ▼
+    DDI Link Prediction
+           │
+           ▼
+    Filtered Ranking
+           │
+           ▼
+   MRR / Hits@K
+```
+
+### Application Flow
+
+```text
+User
+ │
+ ▼
+Drug Search
+ │
+ ▼
+Select Drug
+ │
+ ▼
+DDI Prediction
+ │
+ ├───────────────┐
+ ▼               ▼
+Top-K Ranking   Known DDI Filtering
+ │
+ ▼
+Pair Context
+ │
+ ├───────────────┐
+ ▼               ▼
+Graph Context   External Evidence
+                │
+                ├── openFDA
+                └── PubMed
+```
+
+---
+
+## 4.2. Feature Description and Main Functional Specifications
+
+### 4.2.1. Drug Search
+
+Users can search for drugs using:
+
+* partial drug names
+* exact drug names
+* DrugBank IDs
+* autocomplete suggestions
+
+**Input**
+
+```text
+Drug name or DrugBank ID
+```
+
+**Output**
+
+```text
+Matched drug
+DrugBank ID
+Available prediction information
+```
+
+---
+
+### 4.2.2. DDI Predictor
+
+The DDI Predictor uses the final G3/seed-44 model export to rank candidate drugs.
+
+**Input**
+
+```text
+Query drug
+Top-K value
+```
+
+**Output**
+
+```text
+Candidate drug
+DrugBank ID
+Raw model score
+Ranking
+```
+
+The raw score is a ranking value.
+
+It is **not**:
+
+* a probability
+* calibrated confidence
+* clinical risk
+* interaction severity
+* a safe/dangerous classification
+
+---
+
+### 4.2.3. Known-Positive Filtering
+
+Known DDI pairs are filtered from candidate results.
+
+For the final standalone inference verification:
+
+```text
+Candidate drugs: 4,278
+Known positive pairs filtered: 1,488
+Remaining candidates: 2,789
+```
+
+---
+
+### 4.2.4. Graph Context Explorer
+
+The application provides graph context associated with predicted pairs.
+
+For example, the G3 context runtime contains:
+
+```text
+Total forward support rows: 68,284
+Drug-Gene/Protein: 25,653
+Drug-Disease: 42,631
+```
+
+The graph context is descriptive and should not be interpreted as a causal explanation.
+
+---
+
+### 4.2.5. Pair Context
+
+For the verified example:
+
+```text
+Query drug: Colchicine
+DrugBank ID: DB01394
+
+Candidate drug: Probenecid
+DrugBank ID: DB01032
+```
+
+The G3 context runtime reports:
+
+```text
+Colchicine support entities: 39
+Probenecid support entities: 69
+Shared entities: 33
+Shared gene/protein entities: 3
+Shared disease entities: 30
+```
+
+Shared gene/protein examples include:
+
+```text
+ALB
+CYP2C8
+CYP3A4
+```
+
+These relationships are presented as graph context rather than causal explanations.
+
+---
+
+### 4.2.6. External Evidence
+
+CHEERS separately retrieves external evidence from:
+
+* **openFDA**
+* **PubMed**
+
+The evidence retrieval process does not use an LLM to generate medical conclusions.
+
+For selected drug pairs, the system retrieves explicit cross-drug mentions from relevant FDA label sections and searches PubMed using both drug names.
+
+API endpoint:
 
 ```text
 /api/evidence/pair?drug_a_id=DB01394&drug_b_id=DB01032
 ```
 
-External evidence should be interpreted independently from the model score.
+---
+
+### 4.2.7. Experiment Information
+
+The web application provides information about:
+
+* G0–G3 graph composition
+* model configuration
+* evaluation methodology
+* verification results
+* research limitations
 
 ---
 
-### 4.2.15. Web Application
+### 4.2.8. API Endpoints
 
-The CHEERS web application consists of:
+| Endpoint             | Description              |
+| -------------------- | ------------------------ |
+| `/`                  | Web application          |
+| `/api`               | API information          |
+| `/api/health`        | Health check             |
+| `/api/model`         | Model information        |
+| `/api/experiment`    | Experiment information   |
+| `/api/verification`  | Verification information |
+| `/api/drugs/search`  | Drug search              |
+| `/api/predict`       | DDI prediction           |
+| `/api/context/pair`  | Pair graph context       |
+| `/api/evidence/pair` | FDA/PubMed evidence      |
+| `/docs`              | FastAPI documentation    |
+
+---
+
+### 4.2.9. Final Verification Results
+
+The final project includes several verification procedures.
+
+#### 1. Target-edge leakage check
 
 ```text
-FastAPI Backend
-      ↓
-NumPy Inference Runtime
-      ↓
-Graph Context Index
-      ↓
-FDA / PubMed Retrieval
-      ↓
-HTML / CSS / Vanilla JavaScript Frontend
+Validation target-edge leakage: 0
+Test target-edge leakage: 0
 ```
 
-Major functions include:
+#### 2. Test ranking verification
 
-* Partial drug search
-* Exact drug-name search
-* DrugBank ID search
-* Autocomplete
-* Top-K drug-pair prediction
-* Raw-score ranking
-* Known-positive filtering
-* Self-pair filtering
-* Graph-composition experiment information
-* Model verification information
-* Drug-pair graph context
-* External FDA/PubMed evidence
-* Medicine/Disease exploration
-* Graph Explorer
-* Subgraph / Pair Context Explorer
-* My Health
-* DDI Predictor
-
-The application is designed as a research demonstration rather than a clinical decision-support tool.
-
----
-
-### 4.2.16. Ask CHEERS
-
-The application also provides an **Ask CHEERS** interface for grounded interaction with the project information.
-
-Where applicable, explanations are grounded in available project/model context and external evidence rather than treating the raw model score as a medical conclusion.
-
-The system is designed to distinguish:
+A 1,000-pair test subset was evaluated in both directions:
 
 ```text
-Model Prediction
-      ≠
-Graph Context
-      ≠
-External Evidence
-      ≠
-Clinical Judgment
+Queries: 2,000
+
+MRR:     0.502226
+Hits@1:  0.4525
+Hits@5:  0.5465
+Hits@10: 0.5870
+
+Median rank: 2
 ```
+
+#### 3. Positive vs. unobserved-pair sanity check
+
+```text
+Positive mean score:       161.370407
+Positive median score:       6.497307
+
+Unobserved mean score:      -2.773926
+Unobserved median score:    -1.558111
+
+Pairwise win rate:           97.54%
+ROC-AUC:                     0.9737
+```
+
+These values are a sanity check against unobserved pairs and should not be interpreted as clinical performance.
+
+#### 4. Metadata resolution
+
+All:
+
+```text
+13,094 graph nodes
+4,278 candidate drugs
+```
+
+resolve to available metadata.
+
+#### 5. Checkpoint reproducibility
+
+The G3 seed-44 checkpoint reproduces:
+
+```text
+MRR:     0.540359
+Hits@1:  0.490656
+Hits@5:  0.588273
+Hits@10: 0.626229
+```
+
+#### 6. Graph edge-count verification
+
+The final graph variants match the expected edge counts described in the experiment configuration.
+
+#### 7. Standalone inference verification
+
+Verified query:
+
+```text
+Colchicine
+DrugBank ID: DB01394
+```
+
+Final G3/seed-44 lightweight inference produced the following Top-10 ranking after filtering known-positive pairs:
+
+| Rank | Drug                             | DrugBank ID |   Score |
+| ---: | -------------------------------- | ----------- | ------: |
+|    1 | Probenecid                       | DB01032     | 40.8524 |
+|    2 | Hydrocortisone                   | DB00741     |  7.9139 |
+|    3 | Ondansetron                      | DB00904     |  5.7451 |
+|    4 | Sulfinpyrazone                   | DB01138     |  5.6925 |
+|    5 | Melengestrol acetate             | DB14659     |  5.5811 |
+|    6 | Prednisone acetate               | DB14646     |  5.2154 |
+|    7 | Coumarin                         | DB04665     |  5.1917 |
+|    8 | Dicoumarol                       | DB00266     |  5.1416 |
+|    9 | Methylprednisolone hemisuccinate | DB14644     |  5.0514 |
+|   10 | Oxycodone                        | DB00497     |  4.9924 |
 
 ---
 
-### 4.2.17. API Specification
+### Relation Ablation Analysis
 
-The main API endpoints are:
+The project also evaluates individual relation families through A1–A7 experiments.
 
-| Endpoint             | Description                           |
-| -------------------- | ------------------------------------- |
-| `/`                  | Application entry point               |
-| `/api`               | API information                       |
-| `/api/health`        | Health check                          |
-| `/api/model`         | Model/runtime information             |
-| `/api/experiment`    | Experiment information                |
-| `/api/verification`  | Verification information              |
-| `/api/drugs/search`  | Drug search                           |
-| `/api/predict`       | Drug-pair prediction                  |
-| `/api/context/pair`  | Graph context for a drug pair         |
-| `/api/evidence/pair` | FDA/PubMed evidence                   |
-| `/docs`              | FastAPI interactive API documentation |
+| Experiment | Relation         |                 MRR |     Δ MRR | Positive Seeds |
+| ---------- | ---------------- | ------------------: | --------: | -------------: |
+| Baseline   | G0               | 0.529118 ± 0.008136 |         — |              — |
+| A1         | Target           | 0.535154 ± 0.009967 | +0.006036 |            2/3 |
+| A2         | Enzyme           | 0.527979 ± 0.002269 | −0.001138 |            1/3 |
+| A3         | Transporter      | 0.532645 ± 0.010348 | +0.003528 |            3/3 |
+| A4         | Carrier          | 0.535263 ± 0.005680 | +0.006145 |            3/3 |
+| A5         | Indication       | 0.535659 ± 0.008666 | +0.006542 |            2/3 |
+| A6         | Contraindication | 0.525807 ± 0.003087 | −0.003311 |            1/3 |
+| A7         | Off-label use    | 0.510576 ± 0.038774 | −0.018541 |            1/3 |
+
+### Relation Ablation Figure
+
+![Relation Ablation Results](figures/relation_ablation_delta_mrr_3seed.png)
+
+The relation ablation results indicate that the contribution of biomedical relation families is not uniform. Some relation families improve the measured ranking performance in this experiment, while others do not.
+
+These results should be interpreted as associations observed in this experimental setting rather than causal effects.
+
+---
+
+### Case Study Visualization
+
+![Case Study Ranking](case_study_rank_chart.png)
+
+The corresponding data are available in:
+
+```text
+case_study_ranks.csv
+```
 
 ---
 
 ## 4.3. Directory Structure
 
-The official repository is organized as follows:
-
 ```text
-capstone-2026-team-05/
-│
+CHEERS/
 ├── api/
-│   └── main.py
-│
 ├── checkpoints/
-│   └── rgcn_multiseed/
-│
 ├── data/
-│   └── processed/
-│       ├── mappings/
-│       └── rgcn_tensors/
-│
 ├── docs/
-│   ├── 01.보고서/
-│   ├── 02.포스터/
-│   └── 03.발표자료/
-│
 ├── figures/
-│
 ├── final_release/
-│   ├── lightweight_runtime/
-│   ├── g3_context_runtime/
-│   ├── app_requirements.txt
-│   ├── PORTABLE_APP_MANIFEST_V2.json
-│   └── PORTABLE_APP_MANIFEST_V3.json
-│
 ├── frontend/
-│
 ├── notebooks/
-│
 ├── results/
-│   ├── live_5seed/
-│   └── ...
-│
 ├── scripts/
-│
 ├── src/
-│
 ├── web/
-│
 ├── .github/
-│   └── workflows/
-│
 ├── .gitignore
 ├── PORTABLE_APP_MANIFEST.json
 ├── README.md
 └── THIRD_PARTY_NOTICES.md
 ```
 
+### Important directories
+
+```text
+checkpoints/
+```
+
+Contains trained model checkpoints.
+
+```text
+data/
+```
+
+Contains processed graph and model-related data.
+
+```text
+figures/
+```
+
+Contains research visualization files.
+
+```text
+final_release/
+```
+
+Contains lightweight runtime artifacts, context runtime files, verification materials, and release manifests.
+
+```text
+results/
+```
+
+Contains experiment results, including the current five-seed graph-composition summary.
+
+```text
+scripts/
+```
+
+Contains utility and verification scripts.
+
+```text
+src/
+```
+
+Contains research/model source code.
+
+```text
+web/
+```
+
+Contains web application-related components.
+
 ---
 
-## 4.4. Industry Mentoring Feedback and Reflected Improvements
+## 4.4. Industry Mentoring Feedback and Reflected Changes
 
-> **To be completed with the final mentoring record.**
+### Mentoring Feedback
 
-The final version of this section should describe:
+> **[To be added]**
 
-* Date and topic of each mentoring session
-* Feedback provided by the industry mentor
-* Technical or design issues identified
-* Changes made based on the feedback
-* Remaining limitations
+### Reflected Changes
 
-Suggested format:
+> **[To be added]**
 
-| Mentoring Topic     | Feedback          | Reflected Improvement |
-| ------------------- | ----------------- | --------------------- |
-| Model / Research    | [To be completed] | [To be completed]     |
-| System Architecture | [To be completed] | [To be completed]     |
-| UI / UX             | [To be completed] | [To be completed]     |
-| Deployment          | [To be completed] | [To be completed]     |
+Recommended contents:
+
+* Mentor feedback
+* Problems identified during mentoring
+* Changes made to the research design
+* Changes made to the application
+* Changes made to the documentation
+* Additional verification or testing performed after mentoring
 
 ---
 
 # 5. Installation and Execution
 
-## 5.1. Installation Procedure and Execution
+## 5.1. Installation and Execution Procedure
 
-CHEERS provides a lightweight local application that can be executed without a GPU.
+CHEERS provides two different execution environments.
 
-### Requirements
+### A. Full Research / Training Environment
 
-Recommended environment:
-
-* Python 3.12.6
-* NumPy 1.26.4
-* FastAPI 0.141.1
-* Uvicorn 0.52.1
-* Pydantic 2.13.4
-
-The required packages are listed in:
+The original training environment used:
 
 ```text
-final_release/app_requirements.txt
+Python 3.10.20
+PyTorch 2.2.1+cu121
+PyTorch Geometric 2.5.3
+NumPy 1.26.4
 ```
 
-### Step 1. Clone the repository
-
-```bash
-git clone https://github.com/pnucse-capstone2026/capstone-2026-team-05.git
-cd capstone-2026-team-05
-```
-
-### Step 2. Create a virtual environment
-
-#### macOS / Linux
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-#### Windows
-
-```powershell
-python -m venv .venv
-.venv\Scripts\activate
-```
-
-### Step 3. Install dependencies
-
-```bash
-pip install -r final_release/app_requirements.txt
-```
-
-### Step 4. Run verification scripts
-
-The repository contains verification scripts for checking the exported runtime and project artifacts.
-
-Refer to:
-
-```text
-scripts/
-final_release/
-```
-
-for the available verification commands.
-
-### Step 5. Start the FastAPI server
-
-```bash
-python -m uvicorn api.main:app --host 127.0.0.1 --port 8000
-```
-
-### Step 6. Open the application
-
-Web application:
-
-```text
-http://127.0.0.1:8000
-```
-
-FastAPI documentation:
-
-```text
-http://127.0.0.1:8000/docs
-```
-
----
-
-### Full Research Training Environment
-
-The full R-GCN training environment was originally configured on a university GPU environment:
+The original environment was configured as:
 
 ```text
 /workspace/primekg_ddi_rgcn
 ```
 
-Environment:
+with the Conda environment:
 
-* Conda environment: `primekg-rgcn`
-* Python 3.10.20
-* PyTorch 2.2.1 + CUDA 12.1
-* PyTorch Geometric 2.5.3
-* NumPy 1.26.4
-* 4 × RTX 2080 Ti
+```text
+primekg-rgcn
+```
 
-The final training environment was configured with an isolated physical GPU for the project.
+The original training environment used NVIDIA GPUs.
 
-The full preprocessing and retraining pipeline is not intended to be fully self-contained in the portable repository.
+The full preprocessing and retraining pipeline is **not completely self-contained in the portable repository**.
+
+The original research notebooks included:
+
+```text
+00_environment_check
+01_inspect_primekg
+02_build_graph_variants
+03_prepare_rgcn_data
+04_train_rgcn
+05_repeat_seeds
+06_finalize_project
+```
+
+---
+
+### B. Lightweight Web Application
+
+The final application uses:
+
+```text
+FastAPI
+NumPy
+Python standard library
+HTML
+CSS
+Vanilla JavaScript
+```
+
+The lightweight runtime does not require:
+
+* PyTorch
+* PyTorch Geometric
+* CUDA
+* GPU
+* React
+* Node.js
+* npm
+* external CDN
+
+### Lightweight Runtime Files
+
+```text
+final_release/lightweight_runtime/
+├── ddi_runtime_embeddings.npz
+├── drug_metadata.csv
+├── known_positive_mask_packed.npz
+└── manifest
+```
+
+The main scoring operation is based on:
+
+```text
+query_embedding @ (candidate_embeddings * ddi_relation).T
+```
+
+The runtime was verified against the final G3/seed-44 inference output.
+
+---
+
+### G3 Context Runtime
+
+```text
+final_release/g3_context_runtime/
+```
+
+contains relation-preserving graph context information used by the application.
+
+The runtime contains:
+
+```text
+68,284 total forward support rows
+25,653 Drug-Gene/Protein rows
+42,631 Drug-Disease rows
+```
+
+---
+
+### Running the Application
+
+From the project root:
+
+```bash
+cd CHEERS
+```
+
+Then start the FastAPI application according to the provided application entry point.
+
+The application provides:
+
+```text
+/
+ /api
+ /api/health
+ /api/model
+ /api/experiment
+ /api/verification
+ /api/drugs/search
+ /api/predict
+ /api/context/pair
+ /api/evidence/pair
+ /docs
+```
+
+The exact host/port configuration should follow the current project configuration files.
 
 ---
 
 ## 5.2. Troubleshooting
 
-### Port 8000 is already in use
+### Problem 1. Missing Python dependencies
 
-Run the application on another port:
-
-```bash
-python -m uvicorn api.main:app --host 127.0.0.1 --port 8001
-```
-
-Then open:
-
-```text
-http://127.0.0.1:8001
-```
-
-### Python package installation fails
-
-Check the Python version:
+If running the full research environment, verify:
 
 ```bash
 python --version
 ```
 
-Then reinstall the requirements:
-
-```bash
-pip install -r final_release/app_requirements.txt
-```
-
-### The application cannot find runtime files
-
-Make sure the command is executed from the repository root:
+Expected:
 
 ```text
-capstone-2026-team-05/
+Python 3.10.20
 ```
 
-and that the following directory exists:
+For the full training environment, verify the installed versions of PyTorch and PyTorch Geometric.
+
+---
+
+### Problem 2. GPU/CUDA errors
+
+The full training environment requires a compatible PyTorch/CUDA configuration.
+
+The lightweight runtime does **not** require CUDA or a GPU.
+
+For demonstration purposes, use the lightweight runtime when possible.
+
+---
+
+### Problem 3. Missing model artifacts
+
+Check:
 
 ```text
 final_release/lightweight_runtime/
 ```
 
-### GPU or CUDA errors
-
-The lightweight application does not require CUDA or a GPU.
-
-For the portable application, use:
+and:
 
 ```text
-final_release/app_requirements.txt
+checkpoints/
 ```
 
-rather than installing the full PyTorch/PyTorch Geometric training environment.
+The portable inference application is based on exported runtime artifacts rather than requiring the original training checkpoint for every request.
 
-### External evidence is unavailable
+---
 
-FDA and PubMed retrieval requires external network access. If the external services are temporarily unavailable, model prediction and local graph-context functions may still be available independently.
+### Problem 4. Port already in use
+
+If the configured port is already occupied, stop the existing process or change the application port according to the current FastAPI launch configuration.
+
+---
+
+### Problem 5. External evidence unavailable
+
+The FDA/PubMed evidence feature requires network access to the external services.
+
+If external retrieval fails, the model prediction and graph context components remain conceptually separate from the external evidence layer.
 
 ---
 
@@ -1102,303 +1161,270 @@ FDA and PubMed retrieval requires external network access. If the external servi
 
 ## 6.1. Project Introduction Materials
 
-The official project materials are stored in:
+### Project Presentation
+
+> **[PPT / Presentation Link — To be added]**
+
+### Project Documentation
+
+The repository contains the research materials, experiment artifacts, verification results, and application resources required to understand the project.
+
+Important release documents include:
 
 ```text
-docs/
-├── 01.보고서/
-│   ├── 01.착수보고서.pdf
-│   ├── 02.중간보고서.pdf
-│   └── 03.최종보고서.pdf
-│
-├── 02.포스터/
-│   └── 포스터파일.pdf
-│
-└── 03.발표자료/
-    ├── 발표자료.pdf
-    └── 발표자료.pptx
-```
-
-Additional project figures and experiment artifacts are available under:
-
-```text
-figures/
-results/
+README.md
+PORTABLE_APP_MANIFEST.json
+THIRD_PARTY_NOTICES.md
+final_release/PORTABLE_APP_MANIFEST_V2.json
+final_release/PORTABLE_APP_MANIFEST_V3.json
 ```
 
 ---
 
 ## 6.2. Demonstration Video
 
-**Demo Video:** [To be added]
+> **[Demo Video Link — To be added]**
 
-**Live Demo:** [To be added, if available]
+The demonstration video is planned to show:
 
-The demonstration video should show:
-
-1. Opening the CHEERS application
-2. Searching for a drug
-3. Running a DDI prediction
-4. Viewing ranked candidates
-5. Inspecting graph context
-6. Viewing external evidence
-7. Exploring experiment and verification information
+1. Drug search
+2. DDI prediction
+3. Top-K ranking
+4. Known-positive filtering
+5. Graph context exploration
+6. Pair context
+7. FDA/PubMed evidence retrieval
+8. Experiment and verification information
 
 ---
 
 # 7. Team
 
-## 7.1. Team Member Introduction and Role Distribution
+## 7.1. Team Members and Roles
 
-**Team CHEERS**
-Pusan National University — Computer Science
+### Team CHEERS
 
-| Team Member | Role   | Main Responsibilities |
-| ----------- | ------ | --------------------- |
-| [Member 1]  | [Role] | [Responsibilities]    |
-| [Member 2]  | [Role] | [Responsibilities]    |
-| [Member 3]  | [Role] | [Responsibilities]    |
-| [Member 4]  | [Role] | [Responsibilities]    |
-| [Member 5]  | [Role] | [Responsibilities]    |
+| Member         | Student ID | Major / Grade   | Role   | Main Responsibilities |
+| -------------- | ---------- | --------------- | ------ | --------------------- |
+| **[Member 1]** | [ID]       | [Major / Grade] | [Role] | [Responsibilities]    |
+| **[Member 2]** | [ID]       | [Major / Grade] | [Role] | [Responsibilities]    |
+| **[Member 3]** | [ID]       | [Major / Grade] | [Role] | [Responsibilities]    |
 
-The final team information should match the official PNU capstone registration record.
+### Recommended information for each member
+
+Each member's profile should include:
+
+* Name
+* Student ID, if required
+* Major / grade, if required
+* Main role
+* Specific responsibilities
+* Main contribution to the project
 
 ---
 
 ## 7.2. Team Member Reflections
 
-> **To be completed by each team member.**
+### [Member 1]
 
-Each reflection may include:
+> **[To be added]**
 
-* Personal contribution
-* Technical challenges
-* Research experience
-* Collaboration experience
-* What was learned through the project
-* Future improvements
+The reflection may include:
 
-Suggested format:
+* What I contributed to CHEERS
+* What I learned
+* Technical difficulties I encountered
+* How I overcame those difficulties
+* What I learned from team collaboration
+* What I would improve in future projects
 
-### Member 1
+### [Member 2]
 
-> [Reflection]
+> **[To be added]**
 
-### Member 2
+### [Member 3]
 
-> [Reflection]
-
-### Member 3
-
-> [Reflection]
-
-### Member 4
-
-> [Reflection]
-
-### Member 5
-
-> [Reflection]
+> **[To be added]**
 
 ---
 
 # 8. References and Sources
 
-## 8.1. Main Biomedical Data Source
+## Biomedical Knowledge Graph
 
-**PrimeKG**
+* PrimeKG
 
-PrimeKG is used as the primary biomedical knowledge graph for the project.
+## Drug–Drug Interaction Data
 
-The project specifically uses the `drug_drug` relation represented in PrimeKG as a synergistic interaction relationship.
+* PrimeKG `drug_drug` relation
 
----
+## External Evidence
 
-## 8.2. Drug Identifiers
+* U.S. Food and Drug Administration openFDA
+* PubMed / National Library of Medicine
 
-DrugBank identifiers are used for drug-level identification and metadata matching where available.
+## Graph Neural Network
 
----
+* Relational Graph Convolutional Network (R-GCN)
 
-## 8.3. External Evidence Sources
+## Software and Frameworks
 
-### openFDA
-
-FDA labeling information is retrieved independently from the model prediction pipeline.
-
-### PubMed
-
-PubMed is used to retrieve literature records relevant to selected drug pairs.
-
-External evidence is presented as supporting information and is not used to convert the model score into a clinical conclusion.
-
----
-
-## 8.4. Technical References
-
-The project uses and builds upon established methods and software including:
-
-* Relational Graph Convolutional Networks
 * PyTorch
 * PyTorch Geometric
-* FastAPI
 * NumPy
-* PrimeKG
-* openFDA
-* PubMed
+* FastAPI
 
-Specific bibliographic references and licenses are documented in:
+## Project Resources
+
+The repository also includes:
 
 ```text
 THIRD_PARTY_NOTICES.md
 ```
 
+for third-party software and resource notices.
+
 ---
 
-# Research Scope and Reproducibility
+# Research Results and Interpretation
 
-## Experimental Scope
+## Graph Composition Experiment
 
-The final experiment investigates:
-
-> **The effect of biomedical knowledge graph composition on R-GCN-based drug–drug link prediction.**
-
-The controlled comparison is:
+The final graph-composition experiment uses the current **five-seed** result summary stored at:
 
 ```text
-G0: DDI
-G1: DDI + Drug-Gene/Protein
-G2: DDI + Drug-Disease
-G3: DDI + Drug-Gene/Protein + Drug-Disease
+results/live_5seed/final_experiment_summary.json
 ```
 
-All variants use the same DDI split, R-GCN architecture, optimization settings, and filtered evaluation procedure.
+This five-seed analysis is the authoritative result for the final G0–G3 graph-composition experiment.
+
+The older three-seed graph-composition values that appeared in earlier project documentation are retained only as historical project-stage results and should not be treated as the final graph-composition result.
 
 ---
 
-## Reproducibility Levels
+## Relation Ablation Experiment
 
-### Level 1 — Verified Demonstration
+The A1–A7 relation-family ablation remains a three-seed analysis.
 
-The lightweight runtime and web application are included and independently verified.
+The experiment investigates whether individual biomedical relation families provide useful contextual information for the DDI prediction task.
 
-### Level 2 — Full Model Retraining
+The results demonstrate that the contribution of relation families varies across the experimental conditions.
 
-The complete original preprocessing and training environment is not fully self-contained in the portable repository.
+---
 
-The repository therefore prioritizes reproducible **final inference and verification** rather than claiming complete one-command retraining from raw PrimeKG.
+# Lightweight Inference
+
+The lightweight runtime uses the final verified model export.
+
+The core scoring operation is:
+
+```text
+query_embedding @ (candidate_embeddings * ddi_relation).T
+```
+
+This allows the final model to be demonstrated without requiring the complete original training environment.
+
+---
+
+# Reproducibility
+
+CHEERS provides two levels of reproducibility.
+
+### Level 1 — Verified Lightweight Demonstration
+
+The repository supports:
+
+* lightweight inference
+* drug search
+* DDI ranking
+* known-positive filtering
+* graph context exploration
+* external evidence retrieval
+* verification information
+
+### Level 2 — Full Research Retraining
+
+Full preprocessing and retraining require the original research environment and source-data preparation.
+
+The complete original training pipeline is therefore not represented as a single self-contained one-command reproduction environment.
 
 ---
 
 # Limitations
 
-The current project has the following limitations:
+The following limitations should be considered when interpreting the results.
 
-1. The model is based primarily on PrimeKG.
-2. The target relation is PrimeKG's `drug_drug` / synergistic interaction relation.
-3. Only one principal GNN architecture, R-GCN, is used.
-4. The current graph-composition experiment uses multiple seeds for robustness.
-5. No formal statistical significance testing is performed.
-6. The evaluation is transductive.
-7. Unobserved drug pairs are not confirmed negative interactions.
-8. Relation-level ablation does not establish causal importance.
-9. Knowledge graph incompleteness and source bias may affect results.
-10. Raw model scores are not calibrated probabilities.
-11. Graph context does not establish causality.
-12. A predicted link does not constitute a clinically confirmed drug interaction.
-13. Full preprocessing and retraining from raw data are not included as a self-contained pipeline.
-14. External evidence retrieval depends on the availability of the corresponding services.
+1. The experiment is based on PrimeKG.
+2. The target relation is PrimeKG's `drug_drug` relation.
+3. The target relation is displayed as “synergistic interaction” in the application.
+4. The study evaluates one principal GNN architecture, R-GCN.
+5. Current graph-composition robustness is based on five random seeds.
+6. Relation-family ablation results are based on three seeds.
+7. No statistical significance testing is included.
+8. The experiment is transductive.
+9. Unobserved pairs used for negative sampling are not confirmed negative interactions.
+10. Biomedical knowledge graphs may contain missing or biased information.
+11. Raw model scores are not calibrated probabilities.
+12. Graph context does not establish causality.
+13. A predicted link does not confirm a clinical drug interaction.
+14. Full preprocessing and retraining are not completely contained in the portable application.
+15. The application is intended for research and educational use only.
 
 ---
 
 # Future Work
 
-Potential future work includes:
+Possible future improvements include:
 
-* More extensive relation-level ablation
-* Additional random seeds and bootstrap analysis
+* More random seeds and bootstrap analysis
 * Statistical significance testing
-* Comparison with stronger GNN and knowledge-graph baselines
+* Per-relation ablation with larger repetitions
+* Comparison with additional GNN/KG baselines
 * Inductive and cold-start evaluation
-* External DDI validation datasets
-* Calibrated classification
-* Integration of additional biomedical knowledge sources
+* External DDI validation
+* Calibrated DDI classification
+* Integration of additional biomedical data sources
 * Broader DailyMed/openFDA evidence retrieval
 * Improved synonym-aware drug matching
 * Systematic literature review
 * Pair-level explanatory paths
-* Improved semantic representation of graph relations
-* More comprehensive clinical validation
+* More detailed relation semantics in the user interface
 
 ---
 
 # Safety and Responsible Use
 
-CHEERS is a **research and educational prototype**.
+CHEERS is a **research and educational demonstration**.
 
-The model output must not be used to:
+The model output represents a learned ranking from a biomedical knowledge graph and should not be interpreted as a clinical recommendation.
 
-* Prescribe medication
-* Stop medication
-* Change medication dosage
-* Determine whether a medication is safe or dangerous
-* Replace professional medical advice
+The system must not be used as a basis for:
 
-A raw model score represents a ranking signal within the project's experimental setting. It is not:
+* prescribing medication
+* stopping medication
+* changing medication dosage
+* determining whether a drug combination is safe or dangerous
+* making clinical treatment decisions
 
-* A probability
-* A calibrated confidence value
-* A clinical risk score
-* A severity score
-* A confirmation of a real-world drug interaction
-
-Likewise, graph relationships should not be interpreted as causal explanations.
-
-Clinical interpretation requires qualified healthcare professionals and authoritative medical information.
+For clinical decisions, users should consult qualified healthcare professionals and appropriate authoritative medical resources.
 
 ---
 
-# Project Acknowledgment
+# Project Status
 
-**Team CHEERS**
-**Pusan National University**
-
-This repository contains the final academic project artifacts, research results, lightweight inference runtime, and web demonstration developed for the PNU Computer Science Capstone Project.
-
-For third-party software, datasets, and licenses, see:
-
-```text
-THIRD_PARTY_NOTICES.md
-```
+**Research:** Completed
+**Graph Composition Experiment:** Completed
+**Relation Ablation:** Completed
+**Final Verification:** Completed
+**Lightweight Runtime:** Completed
+**Web Application:** Completed
+**Documentation:** In progress
+**Presentation / Demo Materials:** To be added
 
 ---
 
-## Quick Start
+# Team CHEERS
 
-```bash
-git clone https://github.com/pnucse-capstone2026/capstone-2026-team-05.git
-cd capstone-2026-team-05
+**Pusan National University — Department of Computer Science**
 
-python3 -m venv .venv
-source .venv/bin/activate
-
-pip install -r final_release/app_requirements.txt
-
-python -m uvicorn api.main:app --host 127.0.0.1 --port 8000
-```
-
-Then open:
-
-```text
-http://127.0.0.1:8000
-```
-
-API documentation:
-
-```text
-http://127.0.0.1:8000/docs
-```
-
----
-
-> **CHEERS is a research prototype for studying biomedical knowledge graph composition and drug–drug link prediction. It is not a clinical decision-support system.**
+> **Effect of Biomedical Knowledge Graph Composition on R-GCN-Based Drug–Drug Interaction Prediction**
