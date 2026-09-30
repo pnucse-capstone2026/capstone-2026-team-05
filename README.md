@@ -1183,7 +1183,7 @@ final_release/PORTABLE_APP_MANIFEST_V3.json
 
 ## 6.2. Demonstration Video
 
-> **[Demo Video Link — To be added]**
+> **[YouTube Demo Video](https://www.youtube.com/watch?v=Z7AGAvI0R7Q)**
 
 The demonstration video is planned to show:
 
