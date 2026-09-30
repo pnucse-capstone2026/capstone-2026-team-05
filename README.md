@@ -6,7 +6,7 @@
 
 ## 1. Project Background
 
-### 1.1. Domestic and International Market Status and Problems
+## 1.1. Domestic and International Market Status and Problems
 
 Drug–Drug Interaction (DDI) is an important problem in biomedical and clinical informatics because drugs may interact with one another through shared biological targets, enzymes, transporters, diseases, and other biomedical relationships.
 
