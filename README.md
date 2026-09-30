@@ -1161,9 +1161,8 @@ If external retrieval fails, the model prediction and graph context components r
 
 ## 6.1. Project Introduction Materials
 
-### Project Presentation
-
-> **[PPT / Presentation Link — To be added]**
+- [Project Presentation (PDF)](docs/03.발표자료/발표자료.pdf)
+- [Project Presentation (PPTX)](docs/03.발표자료/발표자료.pptx)
 
 ### Project Documentation
 
@@ -1198,53 +1197,56 @@ The demonstration video is planned to show:
 
 ---
 
-# 7. Team
+## 7. Team Contributions
 
-## 7.1. Team Members and Roles
+The CHEERS project was collaboratively developed by three team members. While all members participated in project discussions, application testing, result interpretation, and preparation of the final graduation project materials, each member took primary responsibility for different parts of the research and system development.
 
-### Team CHEERS
+### 7.1. Team Members and Roles
 
-| Member         | Student ID | Major / Grade   | Role   | Main Responsibilities |
-| -------------- | ---------- | --------------- | ------ | --------------------- |
-| **[Member 1]** | [ID]       | [Major / Grade] | [Role] | [Responsibilities]    |
-| **[Member 2]** | [ID]       | [Major / Grade] | [Role] | [Responsibilities]    |
-| **[Member 3]** | [ID]       | [Major / Grade] | [Role] | [Responsibilities]    |
+#### Byambasuren Tuvshinjargal
 
-### Recommended information for each member
+* Led data preprocessing, entity normalization, triple validation, and heterogeneous knowledge graph construction.
+* Prepared DDI pairs and related biomedical relationship data for graph-based experiments.
+* Implemented, trained, and evaluated the exploratory TransE model, including filtered link-prediction evaluation and metric analysis.
+* Led the final R-GCN G0–G3 graph-composition training pipeline and multi-seed experiments.
+* Analyzed and interpreted ranking, classification, cold-start, external-evaluation, and qualitative experimental results.
+* Developed the backend/API, model-runtime integration, and frontend components of the CHEERS web application.
+* Conducted application debugging, integration testing, UI/UX refinement, runtime verification, and model verification.
+* Contributed to research-direction refinement, methodology design, related-work analysis, experimental documentation, figures, presentation and poster preparation, and final report writing.
 
-Each member's profile should include:
+#### Galbadrakh Buyandelger
 
-* Name
-* Student ID, if required
-* Major / grade, if required
-* Main role
-* Specific responsibilities
-* Main contribution to the project
+* Processed, normalized, validated, and integrated disease–drug `treated_by` triples into the shared biomedical knowledge graph.
+* Implemented, trained, optimized, and evaluated the exploratory ComplEx model.
+* Conducted filtered link-prediction evaluation and metric analysis using MRR and Hits@K.
+* Compared the exploratory TransE, ComplEx, and RotatE model results.
+* Participated in final R-GCN experimentation, dataset verification, experimental evaluation, and result analysis.
+* Supported application testing, experiment verification, and integration of research results into the final CHEERS system.
+* Contributed to experimental and system documentation, result interpretation, presentation-material preparation, and final report writing.
 
----
+#### Bavuujav Delgerbayar
 
-## 7.2. Team Member Reflections
+* Constructed and validated `interacts_with` triples, including duplicate and reverse-pair handling.
+* Implemented, trained, and evaluated the exploratory RotatE model and contributed to DDI safety-checking preparation.
+* Conducted relation-level ablation, multi-seed performance analysis, five-seed verification, and paired statistical analysis.
+* Performed DDI-edge cold-start evaluation and generalization analysis.
+* Developed the G3 Subgraph Explorer and graph/context visualization features.
+* Integrated local biomedical metadata, entity information, and relationship-detail features into the CHEERS web application.
+* Contributed to web-application integration, debugging, quality assurance, reproducibility verification, result interpretation, and final report preparation.
 
-### [Member 1]
+### 7.2. Team Member Reflections
 
-> **[To be added]**
+Byambasuren Tuvshinjargal
 
-The reflection may include:
+Through this project, I gained practical experience in biomedical knowledge graph construction, graph neural networks, and web application development. I also learned the importance of reproducible experiments and collaboration when developing a research-based system.
 
-* What I contributed to CHEERS
-* What I learned
-* Technical difficulties I encountered
-* How I overcame those difficulties
-* What I learned from team collaboration
-* What I would improve in future projects
+Galbadrakh Buyandelger
 
-### [Member 2]
+This project helped me understand how different knowledge graph representations and embedding models can affect link prediction performance. I gained valuable experience in data preprocessing, model evaluation, and collaborative research.
 
-> **[To be added]**
+Bavuujav Delgerbayar
 
-### [Member 3]
-
-> **[To be added]**
+Through this project, I gained experience in relation-level analysis, graph-based visualization, and system integration. I learned how experimental results can be connected to an interactive application and how collaboration contributes to completing a complex project.
 
 ---
 
