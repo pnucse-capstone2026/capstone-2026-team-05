@@ -2,9 +2,6 @@
 
 ### Effect of Biomedical Knowledge Graph Composition on R-GCN-Based Drug–Drug Interaction Prediction
 
-**Team CHEERS**
-**Pusan National University — Department of Computer Science**
-
 ---
 
 ## 1. Project Background
