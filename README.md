@@ -1,237 +1,1141 @@
-# Template for Capstone
-이 레파지토리는 학생들이 캡스톤 프로젝트 결과물을 위한 레파지토리 생성시에 참고할 내용들을 담고 있습니다.
-1. 레파지토리 생성
-2. 레파지토리 구성
-3. 레파지토리 제출 
-4. README.md 가이드라인
-5. README.md 작성팁
+Get-Content README.md | Select-String "^#"# CHEERS: PrimeKG Graph Composition + R-GCN for Drug–Drug Link Prediction
 
----
+> **Research use only.** CHEERS is an academic graduation-project prototype, not a clinical decision-support system. Its predictions are unobserved links under the PrimeKG `drug_drug` target relation. Model scores are ranking values—not probabilities, calibrated confidence, clinical risk, interaction severity, or evidence that a drug pair is safe or dangerous.
 
-## 1. 레파지토리 생성
-- [https://classroom.github.com/a/i3v_IYnd]
-- 위 Github Classroom 링크에 접속해 본인 조의 github 레파지토리를 생성하세요.
+**Repository:** `CHEERS-PrimeKG-RGCN-DDI-Prediction`  
+**Web application:** CHEERS DDI Explorer  
+**Final research title:** *Effect of Biomedical Knowledge Graph Composition on R-GCN-Based Drug–Drug Interaction Prediction*  
+**Team:** Team CHEERS  
+**Institution:** Pusan National University  
+**Project type:** Computer Science graduation project
 
-<img width="1171" height="592" alt="image" src="https://github.com/user-attachments/assets/22919da2-dee5-4ca8-98f1-3dd63d7a6013" />
+## Table of contents
 
+- [Project overview](#project-overview)
+- [Scientific scope](#scientific-scope)
+- [Project evolution](#project-evolution)
+- [Final research design](#final-research-design)
+- [PrimeKG and DDI canonicalization](#primekg-and-ddi-canonicalization)
+- [Fixed DDI split and leakage safeguards](#fixed-ddi-split-and-leakage-safeguards)
+- [Graph variants](#graph-variants)
+- [Global relation mapping](#global-relation-mapping)
+- [Nodes and processed model data](#nodes-and-processed-model-data)
+- [Model architecture](#model-architecture)
+- [Negative sampling](#negative-sampling)
+- [Training and model selection](#training-and-model-selection)
+- [Filtered ranking evaluation](#filtered-ranking-evaluation)
+- [Multi-seed results](#multi-seed-results)
+- [Interpretation of graph composition](#interpretation-of-graph-composition)
+- [Final model verification](#final-model-verification)
+- [Lightweight NumPy runtime](#lightweight-numpy-runtime)
+- [G3 graph-context runtime](#g3-graph-context-runtime)
+- [Independent FDA and PubMed evidence](#independent-fda-and-pubmed-evidence)
+- [Web application](#web-application)
+- [API reference](#api-reference)
+- [Local Windows setup](#local-windows-setup)
+- [University training environment](#university-training-environment)
+- [Original notebook pipeline](#original-notebook-pipeline)
+- [Repository structure](#repository-structure)
+- [Reproducibility levels](#reproducibility-levels)
+- [Artifacts and audit trail](#artifacts-and-audit-trail)
+- [What should be committed](#what-should-be-committed)
+- [Limitations](#limitations)
+- [Future work](#future-work)
+- [Safety and responsible use](#safety-and-responsible-use)
+- [Acknowledgment](#acknowledgment)
 
-- 레포지토리 생성 시 팀명은 `TEAM-{조 번호}` 형식으로 생성하세요.
-- 예를 들어, 2026년도 3조의 팀명은 `TEAM-03` 입니다.
-- 이 경우 `Capstone2026-team-03`이란 이름으로 레파지토리가 생성됩니다.
+## Project overview
 
----
+CHEERS studies the question:
 
-## 2. 레파지토리 구성
-- 레파지토리 내에 README.md 파일 생성하고 아래의 가이드라인과 작성팁을 참고하여 README.md 파일을 작성하세요. (이 레파지토리의 SAMPLE_README.md 참조)
-- 레파지토리 내에 docs 디렉토리를 생성하고 docs 디렉토리 내에는 과제 수행 하면서 작성한 각종 보고서, 발표자료를 올려둡니다. (이 레파지토리의 docs 디렉토리 참조)
-- 그 밖에 레파지토리의 폴더 구성은 과제 결과물에 따라 자유롭게 구성하되 가급적 코드의 목적이나 기능에 따라 디렉토리를 나누어 구성하세요.
+> **How does biomedical knowledge graph composition affect R-GCN drug–drug link prediction?**
 
----
+The final controlled experiment compares four PrimeKG graph variants while holding the DDI split, R-GCN architecture, decoder, training procedure, and evaluation protocol fixed. The graph variants range from DDI-only topology to a heterogeneous graph combining Drug–Drug, Drug–Gene/Protein, and Drug–Disease relationships.
 
-## 3. 레파지토리 제출 
+The repository also contains a lightweight local demonstration application. The application serves the independently verified final G3/seed-44 export with NumPy, so a local user does not need the university GPU environment, PyTorch, or PyTorch Geometric.
 
-- **`[주의]` 레파지토리 제출**은 해당 레파지토리의 ownership을 **학과 계정**으로 넘기는 것이므로 되돌릴 수 없습니다.
-- **레파지토리 제출** 전, 더 이상 수정 사항이 없는지 다시 한번 확인하세요.
-- github 레파지토리에서 Settings > General > Danger zone > Transfer 클릭
-  <img src="https://github.com/user-attachments/assets/cb2361d4-e07e-4b5d-9116-aa80dddd8a8b" alt="소유주 변경 경로" width="500" />
-  
-- [ Specify an organization or username ]에 'PNUCSE'를 입력하고 확인 메세지를 입력하세요.
-  <img src="https://github.com/user-attachments/assets/7c63955d-dcfe-4ac3-bdb6-7d2620575f3a" alt="소유주 변경" width="400" />
+Three scopes must be distinguished:
 
----
+| Scope | Purpose | Status in this repository |
+|---|---|---|
+| Final graduation experiment | Controlled G0–G3 R-GCN graph-composition comparison | Results, selected checkpoint, selected G3 graph artifacts, summaries, and original inference code are included; full preprocessing/retraining workspace is not |
+| Earlier project stages | Broader clinical-inference concept and KGE exploration | Documented historically; not presented as the final R-GCN experiment |
+| Lightweight demonstration | Search, Top-K link ranking, experiment display, verification display, pair-specific G3 context, and independent FDA/PubMed review | Fully supported locally; external evidence retrieval additionally requires network access to openFDA and NCBI |
 
-## 4. README.md 가이드 라인
-- README 파일 작성시에 아래의 5가지 항목의 내용은 필수적으로 포함해야 합니다.
-- 아래의 항목이외에 프로젝트의 이해를 돕기 위한 내용을 추가해도 됩니다.
-- SAMPLE_README.md 이 단순한 형태의 예제이니 참고하세요.
+## Scientific scope
 
-```markdown
-### 1. 프로젝트 배경
-#### 1.1. 국내외 시장 현황 및 문제점
-> 시장 조사 및 기존 문제점 서술
+The final experiment uses **PrimeKG**. Its prediction target is:
 
-#### 1.2. 필요성과 기대효과
-> 왜 이 프로젝트가 필요한지, 기대되는 효과 등
+- internal relation: `drug_drug`
+- PrimeKG display relation: **synergistic interaction**
 
-### 2. 개발 목표
-#### 2.1. 목표 및 세부 내용
-> 전체적인 개발 목표, 주요 기능 및 기획 내용
+CHEERS therefore does **not** claim to predict every possible type of clinical drug–drug interaction. The application ranks candidate links that are unobserved in the known PrimeKG positive target set.
 
-#### 2.2. 기존 서비스 대비 차별성 
-> 유사 서비스 비교 및 차별점 부각
+The model output is a raw bilinear ranking score. It must not be interpreted as:
 
-#### 2.3. 사회적 가치 도입 계획 
-> 프로젝트의 공공성, 지속 가능성, 환경 보호 등
-### 3. 시스템 설계
-#### 3.1. 시스템 구성도
-> 이미지 혹은 텍스트로 시스템 아키텍쳐 작성
->
-#### 3.2. 사용 기술
-> 프론트엔드, 백엔드, API 등 구체 기술 스택
+- a probability;
+- calibrated confidence;
+- clinical risk or severity;
+- evidence that two drugs are safe;
+- evidence that two drugs are dangerous;
+- a recommendation to prescribe, stop, combine, or change medication.
 
-### 4. 개발 결과
-#### 4.1. 전체 시스템 흐름도
-> 기능 흐름 설명 및 도식화 가능
->
-#### 4.2. 기능 설명 및 주요 기능 명세서
-> 주요 기능에 대한 상세 설명, 각 기능의 입력/출력 및 설명
->
-#### 4.3. 디렉토리 구조
->
-#### 4.4. 산업체 멘토링 의견 및 반영 사항
-> 멘토 피드백과 적용한 사례 정리
+Likewise, the pair-context feature shows support relationships that were present in G3. It is descriptive graph context, not a causal explanation of a score and not clinical evidence. FDA label excerpts and PubMed records are retrieved independently from the model prediction. Failure to retrieve evidence, or retrieval of no evidence, must never be interpreted as evidence of safety.
 
-### 5. 설치 및 실행 방법
->
-#### 5.1. 설치절차 및 실행 방법
-> 설치 명령어 및 준비 사항, 실행 명령어, 포트 정보 등
-#### 5.2. 오류 발생 시 해결 방법
-> 선택 사항, 자주 발생하는 오류 및 해결책 등
+## Project evolution
 
-### 6. 소개 자료 및 시연 영상
-#### 6.1. 프로젝트 소개 자료
-> PPT 등
-#### 6.2. 시연 영상
-> 영상 링크 또는 주요 장면 설명
+The initial graduation-project concept was a **Knowledge Graph-Based Clinical Inference System** with an intended workflow:
 
-### 7. 팀 구성
-#### 7.1. 팀원별 소개 및 역할 분담
->
-#### 7.2. 팀원 별 참여 후기
-> 개별적으로 느낀 점, 협업, 기술적 어려움 극복 사례 등
-
-### 8. 참고 문헌 및 출처
-
+```text
+symptoms → disease → treatment drug → drug–drug interaction warning
 ```
 
-## 5. README.md 작성팁 
-* 마크다운 언어를 이용해 README.md 파일을 작성할 때 참고할 수 있는 마크다운 언어 문법을 공유합니다.  
-* 다양한 예제와 보다 자세한 문법은 [이 문서](https://www.markdownguide.org/basic-syntax/)를 참고하세요.
+Initial data-source planning included PrimeKG, DrugBank, and DDInter. Early technical work included:
 
-### 5.1. 헤더 Header
-```
-# This is a Header 1
-## This is a Header 2
-### This is a Header 3
-#### This is a Header 4
-##### This is a Header 5
-###### This is a Header 6
-####### This is a Header 7 은 지원되지 않습니다.
-```
-<br />
+- TransE, ComplEx, and RotatE knowledge-graph embeddings;
+- heterogeneous triple construction;
+- entity normalization and relation standardization;
+- merged biomedical triples;
+- PyKEEN experimentation;
+- MRR and Hits@K evaluation;
+- FastAPI, React, and Cytoscape architecture planning.
 
-### 5.2. 인용문 BlockQuote
-```
-> This is a first blockqute.
->	> This is a second blockqute.
->	>	> This is a third blockqute.
-```
-> This is a first blockqute.
->	> This is a second blockqute.
->	>	> This is a third blockqute.
-<br />
+As the project matured, the research question was narrowed to a more controlled and reproducible experiment: **PrimeKG graph composition + R-GCN + drug–drug link prediction**. This was a research refinement. The earlier KGE experiments are not the final R-GCN experiment, and the current application does not claim to implement the original end-to-end clinical pipeline.
 
-### 5.3. 목록 List
-* **Ordered List**
+## Final research design
+
+```mermaid
+flowchart LR
+    A[PrimeKG] --> B[Canonical DDI pairs]
+    B --> C[One fixed train/validation/test split]
+    C --> G0[G0: DDI only]
+    C --> G1[G1: + Drug–Gene/Protein]
+    C --> G2[G2: + Drug–Disease]
+    C --> G3[G3: combined context]
+    G0 --> R[Same R-GCN and filtered ranking]
+    G1 --> R
+    G2 --> R
+    G3 --> R
+    R --> M[Compare MRR and Hits@K across seeds 42–44]
 ```
-1. first
-2. second
-3. third  
+
+The same target split, architecture, decoder, and model-selection rule were used for all graph variants. This isolates graph composition as the experimental variable.
+
+## PrimeKG and DDI canonicalization
+
+Training used the PrimeKG source file `kg.csv` in the university workspace. That raw file is **not included** in this portable repository and is ignored by `.gitignore`.
+
+The original PrimeKG CSV schema was:
+
+| Column | Meaning |
+|---|---|
+| `relation` | normalized relation name |
+| `display_relation` | source-facing relation label |
+| `x_index`, `y_index` | source node indices |
+| `x_id`, `y_id` | source entity identifiers |
+| `x_type`, `y_type` | entity types |
+| `x_name`, `y_name` | entity names |
+| `x_source`, `y_source` | metadata sources |
+
+Observed DDI properties:
+
+| Quantity | Value |
+|---|---:|
+| Directed `drug_drug` rows | 2,672,628 |
+| Unique undirected Drug–Drug pairs | 1,336,314 |
+| Reverse duplicates | 1,336,314 |
+| Self-loops | 0 |
+
+The source `drug_drug` relation was symmetric: every undirected pair appeared in both directions. Canonicalization ordered each pair and removed its reverse duplicate, producing 1,336,314 unique pairs. This prevented symmetric copies from leaking across train, validation, and test sets.
+
+The canonical training-workspace artifact was:
+
+```text
+data/processed/primekg_ddi_unique.parquet
 ```
-1. first
-2. second
-3. third
-<br />
 
-* **Unordered List**
+It is not included in this portable repository.
+
+## Fixed DDI split and leakage safeguards
+
+| Split | Unique canonical DDI pairs |
+|---|---:|
+| Training | 1,069,080 |
+| Validation | 133,620 |
+| Test | 133,614 |
+| **Total** | **1,336,314** |
+
+Safeguards:
+
+- G0, G1, G2, and G3 used the same fixed DDI split.
+- Train, validation, and test had no overlap.
+- Validation and test DDI edges were excluded from message-passing adjacency.
+- Symmetric DDI duplicates were removed before splitting.
+- All held-out entities remained known, making the experiment transductive.
+
+The original split files were `train.parquet`, `val.parquet`, and `test.parquet` under `data/processed/ddi_splits_final/` in the university training workspace. They are not included here.
+
+## Graph variants
+
+| Graph | Composition | Directed message-passing edges | Active relations |
+|---|---|---:|---:|
+| G0 | DDI only | 2,138,160 | 1 |
+| G1 | DDI + Drug–Gene/Protein | 2,189,466 | 9 |
+| G2 | DDI + Drug–Disease | 2,223,422 | 7 |
+| G3 | DDI + Drug–Gene/Protein + Drug–Disease | 2,274,728 | 15 |
+
+### G0 — DDI only
+
+G0 contains only training Drug ↔ Drug target edges. The 1,069,080 undirected training pairs become 2,138,160 directed message-passing edges.
+
+### G1 — DDI + Drug–Gene/Protein
+
+G1 adds four forward support relations and their reverse message-passing relations:
+
+| Forward relation | Edges |
+|---|---:|
+| target | 16,380 |
+| enzyme | 5,317 |
+| transporter | 3,092 |
+| carrier | 864 |
+| **Total** | **25,653** |
+
+### G2 — DDI + Drug–Disease
+
+G2 adds three forward support relations and their reverse message-passing relations:
+
+| Forward relation | Edges |
+|---|---:|
+| indication | 9,388 |
+| contraindication | 30,675 |
+| off-label use | 2,568 |
+| **Total** | **42,631** |
+
+### G3 — combined context
+
+G3 combines DDI, all four Drug–Gene/Protein relation types, and all three Drug–Disease relation types. It is the complete heterogeneous graph used by the selected final model.
+
+## Global relation mapping
+
+All variants used the same global relation allocation:
+
+| ID | Relation | ID | Relation |
+|---:|---|---:|---|
+| 0 | `drug_drug` | 8 | `rev_carrier` |
+| 1 | `target` | 9 | `indication` |
+| 2 | `rev_target` | 10 | `rev_indication` |
+| 3 | `enzyme` | 11 | `contraindication` |
+| 4 | `rev_enzyme` | 12 | `rev_contraindication` |
+| 5 | `transporter` | 13 | `off-label use` |
+| 6 | `rev_transporter` | 14 | `rev_off-label use` |
+| 7 | `carrier` |  |  |
+
+Reverse support relations let information propagate in both directions while retaining directional relation semantics. The symmetric DDI relation used a single relation ID.
+
+All graph variants allocated 15 relation slots, so parameter counts remained consistent. Inactive relation weights received no messages in variants where those relation types were absent.
+
+## Nodes and processed model data
+
+| Item | Value |
+|---|---:|
+| Shared graph nodes | 13,094 |
+| Candidate drug nodes | 4,278 |
+| Allocated relation types | 15 |
+| Known-positive mask | 4,278 × 4,278 boolean matrix |
+| Known-positive symmetric entries | 2,672,628 |
+
+The university training workspace originally contained comprehensive mapping files and G0–G3 tensors. This portable repository includes only:
+
+- `data/processed/mappings/drug_metadata.parquet`;
+- `data/processed/rgcn_tensors/G3.pt`;
+- `data/processed/rgcn_tensors/drug_node_ids.pt`;
+- `data/processed/rgcn_tensors/ddi_known_positive_mask.pt`.
+
+It does **not** include `node_mapping.parquet`, `relation_mapping.parquet`, `node_metadata_enriched.parquet`, G0–G2 tensors, or the DDI train/validation/test tensor files.
+
+## Model architecture
+
+The final model is a two-layer Relational Graph Convolutional Network implemented with PyTorch Geometric `RGCNConv`.
+
+```text
+node embedding
+  → RGCNConv
+  → ReLU
+  → dropout
+  → RGCNConv
+  → symmetric DistMult-style DDI decoder
 ```
-* 하나
-  * 둘
 
-+ 하나
-  + 둘
+| Setting | Value |
+|---|---:|
+| Embedding dimension | 128 |
+| Hidden dimension | 128 |
+| Dropout | 0.2 |
+| Learning rate | 0.001 |
+| Weight decay | 1e-5 |
+| Maximum epochs | 500 |
+| Early-stopping patience | 10 |
+| Positive training samples per epoch | 100,000 |
+| Negative sampling ratio | 1:1 |
+| Model parameters | 2,200,704 |
 
-- 하나
-  - 둘
+The decoder learns a `ddi_relation` vector and scores a pair with a symmetric DistMult-style bilinear operation. G0–G3 used the same architecture, decoder, allocated relation slots, and parameter count.
+
+## Negative sampling
+
+Training and evaluation negatives were sampled Drug–Drug pairs absent from the known positive DDI set. They are correctly described as **sampled unobserved pairs**, not confirmed negative interactions.
+
+Knowledge graphs are incomplete. A pair absent from PrimeKG may be genuinely unsupported, missing from the source, or not represented under this particular target relation. Treating all unobserved pairs as clinically negative would therefore be incorrect.
+
+## Training and model selection
+
+The controlled procedure used:
+
+1. one fixed DDI split for every graph variant;
+2. deterministic sampling where applicable;
+3. identical model architecture and optimization settings;
+4. validation binary cross-entropy for checkpoint selection;
+5. no test-set use during training or model selection;
+6. a separate best-validation checkpoint for each graph/seed under the same rule.
+
+The checkpoint packaged for the demonstration is:
+
+| Field | Value |
+|---|---|
+| Graph | G3 |
+| Seed | 44 |
+| Best epoch | 499 |
+| Included file | `checkpoints/rgcn_multiseed/G3_seed44_best.pt` |
+
+## Filtered ranking evaluation
+
+Evaluation used full filtered ranking over all 4,278 candidate drugs.
+
+| Quantity | Value |
+|---|---:|
+| Held-out test DDI pairs | 133,614 |
+| Directions evaluated per pair | 2 |
+| Ranking queries | 267,228 |
+| Candidates scored per query | 4,278 |
+
+For each directional query:
+
+1. score all 4,278 candidate drugs;
+2. filter candidates already known as positive DDI links;
+3. filter the self-pair;
+4. restore the current held-out test target;
+5. rank that target among the remaining candidates.
+
+Metrics:
+
+- **MRR:** rewards models that place the correct target closer to the top.
+- **Hits@1:** fraction of queries whose correct target ranks first.
+- **Hits@5:** fraction whose correct target appears in the top five.
+- **Hits@10:** fraction whose correct target appears in the top ten.
+
+## Multi-seed results
+
+Robustness was evaluated with seeds **42, 43, and 44**. Values are mean ± sample standard deviation.
+
+| Graph | MRR | Hits@1 | Hits@5 | Hits@10 |
+|---|---:|---:|---:|---:|
+| G0 | 0.527284 ± 0.006373 | 0.480464 ± 0.005801 | 0.572694 ± 0.007746 | 0.609447 ± 0.009457 |
+| G1 | 0.530969 ± 0.007414 | 0.484194 ± 0.007010 | 0.575418 ± 0.007907 | 0.612683 ± 0.007986 |
+| G2 | 0.526776 ± 0.007482 | 0.480197 ± 0.006691 | 0.571716 ± 0.008899 | 0.608608 ± 0.009758 |
+| **G3** | **0.534209 ± 0.006288** | **0.486290 ± 0.005899** | **0.580468 ± 0.007000** | **0.618074 ± 0.007312** |
+
+Main comparison:
+
+- G3 ranked first by mean MRR.
+- Absolute G3-versus-G0 MRR improvement: **+0.006924**.
+- Relative MRR improvement: **+1.31%**.
+- G3 exceeded G0 for MRR, Hits@1, Hits@5, and Hits@10 in all five evaluated seeds.
+
+**The gain was modest but consistent across the five evaluated seeds.** Five seeds were evaluated, so statistical significance is not claimed.
+
+## Relation-level ablation study
+
+After the G0-G3 graph-composition experiments, we performed a finer-grained relation-level ablation study to investigate which individual biomedical relation types contribute to R-GCN drug-drug interaction prediction.
+
+The DDI-only graph (**G0**) was used as the baseline. Each ablation variant retained the same DDI backbone and added exactly one biomedical relation type.
+
+| Variant | Biomedical relation | Original edges | Directed edges |
+|---|---|---:|---:|
+| A1 | Target | 16,380 | 32,760 |
+| A2 | Enzyme | 5,317 | 10,634 |
+| A3 | Transporter | 3,092 | 6,184 |
+| A4 | Carrier | 864 | 1,728 |
+| A5 | Indication | 9,388 | 18,776 |
+| A6 | Contraindication | 30,675 | 61,350 |
+| A7 | Off-label use | 2,568 | 5,136 |
+
+All relation variants were trained and evaluated using the same DDI train/validation/test setup as the G0 baseline. To account for randomness in model initialization and training, each experiment was repeated using seeds **42, 43, and 44**.
+
+### Evaluation against G0
+
+For each seed, the contribution of a biomedical relation was measured using the paired MRR difference:
+
+**Delta MRR = MRR(Ai, seed) - MRR(G0, seed)**
+
+A positive Delta MRR indicates that adding the biomedical relation improved ranking performance relative to the DDI-only baseline under the same seed.
+
+Across seeds 42, 43, and 44, the G0 baseline achieved:
+
+**MRR = 0.529118 ± 0.008136**
+
+The three-seed relation-level results were:
+
+| Variant | Relation | Mean MRR | Mean Delta MRR vs G0 | Positive seeds |
+|---|---|---:|---:|---:|
+| A5 | Indication | 0.535659 ± 0.008666 | +0.006542 ± 0.009709 | 2/3 |
+| A4 | Carrier | 0.535263 ± 0.005680 | +0.006145 ± 0.004079 | 3/3 |
+| A1 | Target | 0.535154 ± 0.009967 | +0.006036 ± 0.013416 | 2/3 |
+| A3 | Transporter | 0.532645 ± 0.010348 | +0.003528 ± 0.003327 | 3/3 |
+| A2 | Enzyme | 0.527979 ± 0.002269 | -0.001138 ± 0.008076 | 1/3 |
+| A6 | Contraindication | 0.525807 ± 0.003087 | -0.003311 ± 0.007487 | 1/3 |
+| A7 | Off-label use | 0.510576 ± 0.038774 | -0.018541 ± 0.030788 | 1/3 |
+
+### Interpretation
+
+The experiment shows that adding biomedical knowledge does **not** uniformly improve DDI prediction.
+
+**Indication** achieved the highest mean MRR (0.535659) and the largest mean improvement over G0 (+0.006542), although it improved over G0 in only two of the three seeds.
+
+**Carrier** produced a similar mean improvement (+0.006145) and was positive in all three seeds. This is notable because carrier was the smallest biomedical relation tested, with only 864 original edges.
+
+**Transporter** also improved over G0 in all three seeds, although its average gain (+0.003528) was smaller.
+
+**Target** achieved a relatively strong mean improvement (+0.006036), but its effect was less consistent across seeds, with one negative seed.
+
+**Enzyme** and **contraindication** did not improve average MRR relative to G0.
+
+**Off-label use** showed the weakest and least stable result. Seed 44 produced a substantial decrease in MRR, resulting in a large standard deviation across the three runs.
+
+These results suggest that the predictive contribution of a biomedical relation is not determined simply by its number of edges. Relation semantics and the structural information introduced into the knowledge graph also appear to matter.
+
+Because only three seeds were evaluated, these results should be interpreted as evidence of relative trends rather than definitive statistical significance.
+
+### Relation-ablation figure
+
+![Three-seed relation-level ablation results](figures/relation_ablation_delta_mrr_3seed.png)
+
+The figure reports paired Delta MRR values relative to the corresponding G0 seed. Values above zero indicate improvement over the DDI-only baseline.
+
+### Reproducibility
+
+Relation-ablation graph construction:
+
+[`notebooks/07_build_relation_ablations.ipynb`](notebooks/07_build_relation_ablations.ipynb)
+
+R-GCN training and evaluation:
+
+[`notebooks/08_train_relation_ablations.ipynb`](notebooks/08_train_relation_ablations.ipynb)
+
+Three-seed aggregate results:
+
+[`results/relation_ablation/final/relation_ablation_3seed_summary.csv`](results/relation_ablation/final/relation_ablation_3seed_summary.csv)
+
+Paired seed-wise comparison against G0:
+
+[`results/relation_ablation/final/relation_ablation_paired_deltas_vs_G0.csv`](results/relation_ablation/final/relation_ablation_paired_deltas_vs_G0.csv)
+
+Per-seed JSON metrics for all A1-A7 experiments are available under:
+
+`results/relation_ablation/`
+
+Large generated artifacts such as trained model checkpoints, graph tensors, and raw PrimeKG data are intentionally excluded from the repository.
+
+## Interpretation of graph composition
+
+The observed comparison supports a restrained interpretation:
+
+- Drug–Gene/Protein context produced a moderate average improvement over DDI-only.
+- Drug–Disease context alone produced little mean improvement.
+- Combining both relation families in G3 produced the strongest overall result.
+- Heterogeneous biomedical context can complement direct DDI topology.
+- The benefit depends on which relation families are included.
+
+These are associations within this experimental design, not causal claims about biology or model reasoning.
+
+## Final model verification
+
+The included `final_release/FINAL_VERIFICATION_SUMMARY.json` records seven technical verification checks.
+
+### 1. Target-edge leakage
+
+- Every G0–G3 message-passing graph contained exactly 1,069,080 training DDI pairs.
+- Validation DDI leakage: **0**.
+- Test DDI leakage: **0**.
+
+### 2. Held-out ranking sanity check
+
+A sample of 1,000 test DDI pairs was evaluated in both directions:
+
+| Quantity | Result |
+|---|---:|
+| Directed queries | 2,000 |
+| MRR | 0.502226 |
+| Hits@1 | 0.4525 |
+| Hits@5 | 0.5465 |
+| Hits@10 | 0.5870 |
+| Median rank | 2 |
+
+### 3. Positive-versus-unobserved score sanity
+
+The check compared 5,000 held-out positive examples with 5,000 sampled unobserved examples.
+
+| Quantity | Result |
+|---|---:|
+| Positive mean score | 161.370407 |
+| Positive median score | 6.497307 |
+| Unobserved mean score | -2.773926 |
+| Unobserved median score | -1.558111 |
+| Pairwise positive win rate | 97.54% |
+| ROC-AUC | 0.9737 |
+
+This sanity check evaluates score separation. It does **not** turn raw scores into probabilities or validate clinical interactions.
+
+### 4. Real entity mapping
+
+All 13,094 graph nodes and all 4,278 candidate drugs resolved to real metadata. Real-drug prediction outputs were inspected.
+
+### 5. Checkpoint reproducibility
+
+The G3 seed-44 checkpoint was loaded into a fresh model and the complete test evaluation was rerun:
+
+| Metric | Reproduced value |
+|---|---:|
+| MRR | 0.540359 |
+| Hits@1 | 0.490656 |
+| Hits@5 | 0.588273 |
+| Hits@10 | 0.626229 |
+
+Differences from the stored seed-44 results were approximately (3 × 10^{-7}) or less. These are seed-44 checkpoint metrics; they are distinct from the three-seed mean table above.
+
+### 6. Graph-composition integrity
+
+Exact directed edge counts were independently confirmed:
+
+| Graph | Edges |
+|---|---:|
+| G0 | 2,138,160 |
+| G1 | 2,189,466 |
+| G2 | 2,223,422 |
+| G3 | 2,274,728 |
+
+### 7. Clean standalone inference
+
+A fresh process loaded the saved model, G3 graph, metadata, candidate drugs, and known-positive mask. The verified query was Colchicine (`DB01394`):
+
+- candidate drugs: 4,278;
+- known positive candidates filtered: 1,488;
+- remaining unobserved candidates: 2,789.
+
+| Rank | Candidate | DrugBank ID | Raw model score |
+|---:|---|---|---:|
+| 1 | Probenecid | DB01032 | 40.8524 |
+| 2 | Hydrocortisone | DB00741 | 7.9139 |
+| 3 | Ondansetron | DB00904 | 5.7451 |
+| 4 | Sulfinpyrazone | DB01138 | 5.6925 |
+| 5 | Melengestrol acetate | DB14659 | 5.5811 |
+| 6 | Prednisone acetate | DB14646 | 5.2154 |
+| 7 | Coumarin | DB04665 | 5.1917 |
+| 8 | Dicoumarol | DB00266 | 5.1416 |
+| 9 | Methylprednisolone hemisuccinate | DB14644 | 5.0514 |
+| 10 | Oxycodone | DB00497 | 4.9924 |
+
+These are model-ranked unobserved PrimeKG target links, not confirmed clinical DDIs.
+
+## Lightweight NumPy runtime
+
+The original training and checkpoint-verification path uses PyTorch and PyTorch Geometric. The local application instead uses verified exported embeddings and a pure NumPy scorer:
+
+```python
+query_embedding @ (candidate_embeddings * ddi_relation).T
 ```
-* 하나
-  * 둘
 
-+ 하나
-  + 둘
+Runtime artifacts:
 
-- 하나
-  - 둘
-<br />
-
-### 5.4. 코드 CodeBlock
-* 코드 블럭 이용 '``'
+```text
+final_release/lightweight_runtime/
+├── ddi_runtime_embeddings.npz
+├── drug_metadata.csv
+├── known_positive_mask_packed.npz
+└── LIGHTWEIGHT_RUNTIME_MANIFEST.json
 ```
-여러줄 주석 "```" 이용
-"```
-#include <stdio.h>
-int main(void){
-  printf("Hello world!");
-  return 0;
+
+Prediction procedure:
+
+1. resolve an exact drug name or DrugBank ID;
+2. obtain the exported query embedding;
+3. score all candidate embeddings;
+4. unpack only the selected query drug's known-positive mask row;
+5. filter known positive PrimeKG DDI links;
+6. filter the self-pair;
+7. rank the remaining unobserved candidates;
+8. return Top-K raw ranking scores.
+
+This deployment optimization neither retrains nor approximates the final model. It uses the post-encoding candidate embeddings and learned relation vector exported after verification. It reproduced the exact verified Colchicine Top-10, including the first score of 40.8524.
+
+Verify it locally:
+
+```powershell
+python final_release\verify_lightweight_runtime.py
+```
+
+Expected:
+
+```text
+PASS: lightweight runtime reproduced the verified Colchicine Top-10.
+First raw model score: 40.8524
+```
+
+## G3 graph-context runtime
+
+The application can inspect the real forward Drug–Gene/Protein and Drug–Disease support relationships exported from the selected G3 graph.
+
+```text
+final_release/g3_context_runtime/
+├── g3_drug_context.csv
+├── g3_context_summary.json
+└── G3_CONTEXT_MANIFEST.json
+```
+
+| Context export quantity | Value |
+|---|---:|
+| Total forward support rows | 68,284 |
+| Drug–Gene/Protein edges | 25,653 |
+| Drug–Disease edges | 42,631 |
+
+Supported forward relations are `target`, `enzyme`, `transporter`, `carrier`, `indication`, `contraindication`, and `off-label use`.
+
+`src/g3_context.py` uses only the Python standard library. It loads the CSV once, indexes primarily by DrugBank ID, preserves entity metadata, and retains all relations independently for each drug.
+
+For example, these two facts:
+
+```text
+Drug A --contraindication--> Disease X
+Drug B --indication-------> Disease X
+```
+
+remain two distinct relation lists. The runtime does not flatten them into a generic “shared disease” statement.
+
+API example:
+
+```http
+GET /api/context/pair?drug_a_id=DB01394&drug_b_id=DB01032
+```
+
+Verified Colchicine + Probenecid context:
+
+| Quantity | Value |
+|---|---:|
+| Colchicine support relationships | 39 |
+| Probenecid support relationships | 69 |
+| Shared unique entities | 33 |
+| Shared Gene/Protein entities | 3 |
+| Shared Disease entities | 30 |
+
+The three shared Gene/Protein entities are:
+
+| Entity | Colchicine relation | Probenecid relation |
+|---|---|---|
+| ALB | Carrier | Carrier |
+| CYP2C8 | Enzyme | Enzyme |
+| CYP3A4 | Enzyme | Enzyme |
+
+These relationships must not be overinterpreted:
+
+> These relationships are graph context available to the G3 model. They are not causal explanations of the model score.
+
+> Shared context does not establish that a drug pair is clinically safe, dangerous, beneficial, or harmful.
+
+Verify the context export:
+
+```powershell
+python final_release\verify_g3_context_runtime.py
+```
+
+## Independent FDA and PubMed evidence
+
+Each ranked candidate retains the separate **Explore context** action and also provides **Review evidence**. Reviewing evidence does not rerun prediction and does not alter the raw R-GCN score.
+
+The evidence endpoint combines two independent retrieval paths:
+
+- openFDA drug-label retrieval, retaining only explicit cross-drug name mentions from selected label sections;
+- a conservative NCBI PubMed query naming both drugs, returning up to five source records.
+
+The application renders source text and bibliographic metadata without LLM summarization. It reports retrieval status explicitly and preserves empty and error states. No evidence result is converted into a label such as safe, dangerous, low risk, or high risk.
+
+```http
+GET /api/evidence/pair?drug_a_id=DB01394&drug_b_id=DB01032
+```
+
+The combined response keeps `ai_context`, `label_evidence`, `literature`, and `limitations` separate. External services are network-dependent and their live results can change over time.
+
+Verify the deterministic schemas, route registration, forbidden-verdict guard, and currently available live services:
+
+```powershell
+python final_release\verify_external_evidence.py
+```
+
+## Web application
+
+The current local architecture is:
+
+```mermaid
+flowchart LR
+    B[Browser: HTML, CSS, vanilla JavaScript] --> F[FastAPI]
+    F --> N[NumPy inference]
+    N --> L[Lightweight embeddings and packed mask]
+    F --> C[Standard-library G3 context store]
+    C --> CSV[G3 support-context CSV]
+    F --> E[Independent evidence services]
+    E --> O[openFDA labels]
+    E --> P[NCBI PubMed]
+    F --> R[Experiment and verification JSON]
+```
+
+Components:
+
+| Layer | Technology | Role |
+|---|---|---|
+| Backend | FastAPI | API lifecycle, validation, JSON responses, and static-file serving |
+| Inference | NumPy | Verified candidate scoring, filtering, and Top-K ranking |
+| Context indexing | Python standard library | CSV loading, per-drug indexes, shared-entity calculation, relation preservation |
+| Evidence retrieval | Python standard library | Independent openFDA label and NCBI PubMed requests with bounded timeouts and explicit status values |
+| Frontend | HTML, CSS, vanilla JavaScript | Search, results, charts, verification, pair-context exploration, and separate evidence review |
+
+The local demonstration requires no React, Node.js, npm, external CDN runtime, PyTorch, PyG, CUDA, or GPU.
+
+Main functionality:
+
+- drug search by partial name;
+- exact-name and DrugBank-ID resolution;
+- autocomplete;
+- configurable Top-K prediction;
+- raw model-score ranking;
+- known-positive and self-pair filtering;
+- graph-composition experiment information;
+- verification information;
+- pair-specific G3 context exploration;
+- relation-preserving shared-context and individual-context tables;
+- independent openFDA label and PubMed literature review with explicit empty/error states.
+
+## API reference
+
+The implementation in `api/main.py` is the source of truth.
+
+| Method | Path | Purpose | Inputs | Main output |
+|---|---|---|---|---|
+| GET | `/` | Serve the web application | none | `web/index.html` |
+| GET | `/api` | API landing metadata | none | project identity, status, route index, disclaimer |
+| GET | `/api/health` | Runtime readiness | none | model-loaded status, CPU device, graph, seed, epoch, candidate count |
+| GET | `/api/model` | Model metadata | none | architecture, decoder, graph composition, dimensions, target relation |
+| GET | `/api/experiment` | Final experiment summary | none | included result JSON plus restrained primary finding |
+| GET | `/api/verification` | Seven-check verification record | none | included verification JSON |
+| GET | `/api/drugs/search` | Autocomplete search | query `q`; optional `limit` 1–50 | matching drug name, DrugBank ID, and node ID |
+| POST | `/api/predict` | Rank unobserved candidate links | JSON body with `drug` and `top_k` 1–50 | query metadata, model metadata, filtering counts, ranked predictions, disclaimer |
+| GET | `/api/context/pair` | Retrieve real G3 support context for a pair | exact `drug_a_id` and `drug_b_id` | complete per-drug context, shared entities, separate relation lists, interpretation warning |
+| GET | `/api/evidence/pair` | Retrieve independent external evidence for a pair | exact `drug_a_id` and `drug_b_id` | pair identity, model-independence notice, openFDA results, PubMed records, limitations |
+| GET | `/docs` | Interactive OpenAPI documentation | none | FastAPI Swagger UI |
+
+Prediction request:
+
+```json
+{
+  "drug": "DB01394",
+  "top_k": 10
 }
-```"
-
-단어 주석 "`" 이용
-"`Hello world`"
-
-* 큰 따움표(") 없이 사용하세요.
-``` 
-<br />
-
-### 5.5. 링크 Link
 ```
-[Title](link)
-[부산대학교 정보컴퓨터공학부](https://cse.pusan.ac.kr/cse/index..do)
 
-<link>
-<https://cse.pusan.ac.kr/cse/index..do>
-``` 
-[부산대학교 정보컴퓨터공학부](https://cse.pusan.ac.kr/cse/index..do)
+Pair-context response shape:
 
-<https://cse.pusan.ac.kr/cse/index..do>
-<br />
-
-### 5.6. 강조 Highlighting
+```json
+{
+  "drug_a": {
+    "drug_id": "DB01394",
+    "drug_name": "Colchicine",
+    "total_context_edges": 39,
+    "context": {
+      "gene_protein": {"count": 0, "relationships": []},
+      "disease": {"count": 0, "relationships": []}
+    }
+  },
+  "drug_b": {},
+  "shared": {
+    "total": 33,
+    "gene_protein_count": 3,
+    "disease_count": 30,
+    "entities": [
+      {
+        "context_name": "ALB",
+        "context_group": "gene/protein",
+        "drug_a_relations": ["carrier"],
+        "drug_b_relations": ["carrier"]
+      }
+    ]
+  },
+  "interpretation": "..."
+}
 ```
-*single asterisks*
-_single underscores_
-**double asterisks**
-__double underscores__
-~~cancelline~~
+
+## Local Windows setup
+
+Tested local runtime:
+
+| Component | Version/status |
+|---|---|
+| Python | 3.12.6 |
+| NumPy | 1.26.4 |
+| FastAPI | 0.141.1 |
+| Uvicorn | 0.52.1 |
+| Pydantic | 2.13.4 |
+| NVIDIA CUDA | not available on the tested local machine |
+
+From PowerShell:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r final_release\app_requirements.txt
 ```
-*single asterisks* <br />
-_single underscores_ <br />
-**double asterisks** <br />
-__double underscores__ <br />
-~~cancelline~~  <br />
-<br />
 
-### 5.7. 이미지 Image
+`app_requirements.txt` is the full local application environment. It includes `lightweight_requirements.txt`, which intentionally contains only NumPy for standalone lightweight scoring and export verification.
+
+Run all three independent checks:
+
+```powershell
+python final_release\verify_lightweight_runtime.py
+python final_release\verify_g3_context_runtime.py
+python final_release\verify_external_evidence.py
 ```
-<img src="image URL" width="600px" title="Title" alt="Alt text"></img>
-![Alt text](image URL "Optional title")
+
+Start the application:
+
+```powershell
+python -m uvicorn api.main:app --host 127.0.0.1 --port 8000
 ```
-- 웹에서 작성한다면 README.md 내용 안으로 이미지를 드래그 앤 드롭하면 이미지가 생성됩니다.
-- 웹이 아닌 로컬에서 작성한다면, github issue에 이미지를 드래그 앤 드롭하여 image url 을 얻을 수 있습니다. (URL만 복사하고 issue는 제출 안 함.)
-  <img src="https://github.com/user-attachments/assets/0fe3bff1-7a2b-4df3-b230-cac4ef5f6d0b" alt="이슈에 image 올림" width="600" />
-  <img src="https://github.com/user-attachments/assets/251c6d42-b36b-4ad4-9cfa-fa2cc67a9a50" alt="image url 복사" width="600" />
 
+Open:
 
-### 5.8. 유튜브 영상 추가
-```markdown
-[![영상 이름](유튜브 영상 썸네일 URL)](유튜브 영상 URL)
-[![부산대학교 정보컴퓨터공학부 소개](http://img.youtube.com/vi/zh_gQ_lmLqE/0.jpg)](https://www.youtube.com/watch?v=zh_gQ_lmLqE)    
+- application: <http://127.0.0.1:8000>
+- API documentation: <http://127.0.0.1:8000/docs>
+
+## University training environment
+
+Full training and checkpoint evaluation were performed separately from the portable local runtime.
+
+| Item | Training environment |
+|---|---|
+| Project directory | `/workspace/primekg_ddi_rgcn` |
+| Conda environment | `primekg-rgcn` |
+| Python | 3.10.20 |
+| PyTorch | 2.2.1+cu121 |
+| PyTorch Geometric | 2.5.3 |
+| NumPy | 1.26.4 |
+| CUDA available | true |
+| Server GPUs | NVIDIA GeForce RTX 2080 Ti ×4 |
+| Final training device | physical GPU2 isolated with `CUDA_VISIBLE_DEVICES` |
+
+Relevant PyG stack:
+
+| Package | Version |
+|---|---|
+| `pyg_lib` | 0.4.0+pt22cu121 |
+| `torch_scatter` | 2.1.2+pt22cu121 |
+| `torch_sparse` | 0.6.18+pt22cu121 |
+| `torch_cluster` | 1.6.3+pt22cu121 |
+| `torch_spline_conv` | 1.2.5+pt22cu121 |
+
+Full retraining requires the original PrimeKG source data, preprocessing outputs, notebooks/configuration, and PyTorch/PyG environment. It is different from running the lightweight application.
+
+## Original notebook pipeline
+
+The notebooks belong to the university training workspace and are **not included** in this portable repository.
+
+| Notebook | Purpose |
+|---|---|
+| `00_environment_check.ipynb` | environment, GPU, and package validation |
+| `01_inspect_primekg.ipynb` | PrimeKG inspection, relation counts, and DDI symmetry analysis |
+| `02_build_graph_variants.ipynb` | G0–G3 construction, reverse support relations, and leakage/count validation |
+| `03_prepare_rgcn_data.ipynb` | global mappings, tensor conversion, target splits, candidate-drug tensor, and known-positive mask |
+| `04_train_rgcn.ipynb` | R-GCN architecture, training, checkpoint selection, and full filtered ranking |
+| `05_repeat_seeds.ipynb` | seeds 42–44, robustness evaluation, and mean ± SD generation |
+| `06_finalize_project.ipynb` | verification summaries, experiment freeze, portable application packaging, NumPy export, and G3 context export |
+
+The absence of these notebooks and the raw/preprocessing artifacts means this repository should not claim complete from-scratch retraining.
+
+## Repository structure
+
+This tree reflects the actual portable folder after repository documentation was added. Generated `.venv/` and `__pycache__/` directories are omitted because they are ignored.
+
+```text
+.
+├── api/
+│   ├── __init__.py
+│   └── main.py
+├── checkpoints/
+│   └── rgcn_multiseed/
+│       └── G3_seed44_best.pt
+├── data/
+│   └── processed/
+│       ├── mappings/
+│       │   └── drug_metadata.parquet
+│       └── rgcn_tensors/
+│           ├── G3.pt
+│           ├── ddi_known_positive_mask.pt
+│           └── drug_node_ids.pt
+├── final_release/
+│   ├── g3_context_runtime/
+│   │   ├── G3_CONTEXT_MANIFEST.json
+│   │   ├── g3_context_summary.json
+│   │   └── g3_drug_context.csv
+│   ├── lightweight_runtime/
+│   │   ├── LIGHTWEIGHT_RUNTIME_MANIFEST.json
+│   │   ├── ddi_runtime_embeddings.npz
+│   │   ├── drug_metadata.csv
+│   │   └── known_positive_mask_packed.npz
+│   ├── app_requirements.txt
+│   ├── FINAL_VERIFICATION_SUMMARY.json
+│   ├── lightweight_requirements.txt
+│   ├── PORTABLE_APP_MANIFEST_V2.json  # historical
+│   ├── PORTABLE_APP_MANIFEST_V3.json  # current
+│   ├── verify_external_evidence.py
+│   ├── verify_g3_context_runtime.py
+│   └── verify_lightweight_runtime.py
+├── results/
+│   └── rgcn_multiseed/
+│       └── final_experiment_summary.json
+├── src/
+│   ├── __init__.py
+│   ├── g3_context.py
+│   ├── inference.py
+│   ├── lightweight_inference.py
+│   ├── pubmed_literature.py
+│   ├── rgcn_model.py
+│   └── safety_evidence.py
+├── web/
+│   ├── app.js
+│   ├── index.html
+│   └── styles.css
+├── .gitignore
+├── PORTABLE_APP_MANIFEST.json
+├── THIRD_PARTY_NOTICES.md
+└── README.md
 ```
-[![부산대학교 정보컴퓨터공학부 소개](http://img.youtube.com/vi/zh_gQ_lmLqE/0.jpg)](https://www.youtube.com/watch?v=zh_gQ_lmLqE)    
 
-- 이때 유튜브 영상 썸네일 URL은 유투브 영상 URL로부터 다음과 같이 얻을 수 있습니다.
+### Runtime-required files
 
-- `Youtube URL`: https://www.youtube.com/watch?v={동영상 ID}
-- `Youtube Thumbnail URL`: http://img.youtube.com/vi/{동영상 ID}/0.jpg 
-- 예를 들어, https://www.youtube.com/watch?v=zh_gQ_lmLqE 라고 하면 썸네일의 주소는 http://img.youtube.com/vi/zh_gQ_lmLqE/0.jpg 이다.
+For the complete lightweight web demonstration:
 
+- `api/main.py`;
+- `src/lightweight_inference.py`;
+- `src/g3_context.py`;
+- `src/safety_evidence.py` and `src/pubmed_literature.py`;
+- `web/index.html`, `web/styles.css`, and `web/app.js`;
+- all files under `final_release/lightweight_runtime/`;
+- all files under `final_release/g3_context_runtime/`;
+- `results/rgcn_multiseed/final_experiment_summary.json`;
+- `final_release/FINAL_VERIFICATION_SUMMARY.json`;
+- `final_release/app_requirements.txt` and its included `lightweight_requirements.txt`.
+
+The three verification scripts are not required for serving requests, but they should be retained to validate the export and evidence response contracts.
+
+### Included research/archive files
+
+The following are preserved original PyTorch/research artifacts and are not loaded by the NumPy application:
+
+- `checkpoints/rgcn_multiseed/G3_seed44_best.pt`;
+- `data/processed/rgcn_tensors/G3.pt`;
+- `data/processed/rgcn_tensors/ddi_known_positive_mask.pt`;
+- `data/processed/rgcn_tensors/drug_node_ids.pt`;
+- `data/processed/mappings/drug_metadata.parquet`;
+- `src/inference.py`;
+- `src/rgcn_model.py`.
+
+Use `final_release/app_requirements.txt` for the complete web application. Use `final_release/lightweight_requirements.txt` only for standalone NumPy scoring or the lightweight export verifier.
+
+## Reproducibility levels
+
+### Level 1 — run the verified demonstration
+
+Supported completely by this portable repository.
+
+Requires:
+
+- Python;
+- NumPy;
+- FastAPI;
+- Uvicorn;
+- Pydantic.
+
+Does not require:
+
+- a GPU;
+- CUDA;
+- PyTorch or PyTorch Geometric;
+- raw PrimeKG `kg.csv`;
+- the university Conda environment.
+
+### Level 2 — full experiment retraining
+
+Not fully self-contained in this portable repository.
+
+Requires:
+
+- the PrimeKG source data;
+- canonical DDI and fixed split artifacts;
+- complete node/relation mappings;
+- G0–G3 preprocessing outputs;
+- PyTorch/PyG;
+- original training notebooks/configuration;
+- a GPU is recommended.
+
+Those materials were retained in the university experiment workspace. The included selected checkpoint and G3 artifacts support archival inspection and the original inference path, but they do not constitute a full G0–G3 from-scratch pipeline.
+
+## Artifacts and audit trail
+
+### Included final-release artifacts
+
+| Path | Role |
+|---|---|
+| `final_release/lightweight_runtime/ddi_runtime_embeddings.npz` | candidate embeddings and learned DDI relation vector |
+| `final_release/lightweight_runtime/known_positive_mask_packed.npz` | packed known-positive candidate mask |
+| `final_release/lightweight_runtime/drug_metadata.csv` | portable drug identity mapping |
+| `final_release/lightweight_runtime/LIGHTWEIGHT_RUNTIME_MANIFEST.json` | runtime facts and verified Top-10 ordering |
+| `final_release/g3_context_runtime/g3_drug_context.csv` | 68,284 real forward G3 support edges |
+| `final_release/g3_context_runtime/g3_context_summary.json` | context counts and interpretation warning |
+| `final_release/g3_context_runtime/G3_CONTEXT_MANIFEST.json` | SHA256 checks for the context CSV and summary |
+| `final_release/verify_lightweight_runtime.py` | independent Top-10 export check |
+| `final_release/verify_g3_context_runtime.py` | independent edge-count and shared-context check |
+| `final_release/verify_external_evidence.py` | deterministic evidence-schema and live-service availability check |
+| `final_release/FINAL_VERIFICATION_SUMMARY.json` | seven-check final model record |
+| `final_release/PORTABLE_APP_MANIFEST_V2.json` | historical evidence-UI release inventory |
+| `final_release/PORTABLE_APP_MANIFEST_V3.json` | current five-seed portable release inventory with SHA256 hashes |
+| `results/rgcn_multiseed/final_experiment_summary.json` | original three-seed experiment snapshot |
+| `results/live_5seed/final_experiment_summary.json` | current five-seed graph-composition results used by the application |
+| `THIRD_PARTY_NOTICES.md` | PrimeKG software and published-dataset license metadata |
+
+The G3 context manifest currently matches its files.
+
+### Experiment-freeze history
+
+In the university training workspace, 44 critical experiment files were frozen with SHA256 hashes. During finalization, `05_repeat_seeds.ipynb` was accidentally changed at the notebook serialization level after the initial freeze. The other 43 of 44 artifacts remained byte-identical, no accidental marker/code remained, and an amendment was created instead of silently replacing the original manifest.
+
+Preserving the original manifest and adding an amendment is better audit practice because it retains the chronology and makes the post-freeze change explicit.
+
+The following training-workspace audit files are **not present** in this portable repository:
+
+- `FINAL_EXPERIMENT_MANIFEST_SHA256.json`;
+- `FINAL_EXPERIMENT_FREEZE.txt`;
+- `FINAL_EXPERIMENT_MANIFEST_AMENDMENT_01.json`;
+- `FINAL_EXPERIMENT_FREEZE_AMENDMENT_01.txt`.
+
+### Portable manifests
+
+`PORTABLE_APP_MANIFEST.json` predates the current NumPy/context/frontend updates. Eleven entries still match, but its hashes/sizes are stale for:
+
+- `api/main.py`;
+- `src/__init__.py`;
+- `web/app.js`;
+- `web/index.html`;
+- `web/styles.css`.
+
+It must not be presented as a current integrity manifest and is retained only as a historical snapshot. `final_release/PORTABLE_APP_MANIFEST_V2.json` records the evidence-UI release state before the five-seed synchronization and is retained as a historical snapshot. `final_release/PORTABLE_APP_MANIFEST_V3.json` is the current release inventory. The V3 manifest intentionally does not hash itself, so its `generated_at_utc` field and every listed file hash can be verified independently without a self-referential checksum.
+
+## What should be committed
+
+### Commit
+
+- `README.md` and `.gitignore`;
+- `api/`, `src/`, and `web/`;
+- required lightweight runtime and G3 context runtime exports;
+- all three independent verification scripts;
+- final experiment and verification summaries;
+- current requirements;
+- valid manifests and any clearly labeled historical manifests.
+
+The 6.028 MB G3 context CSV and verified lightweight NPZ/CSV files are runtime dependencies and are intentionally not ignored.
+
+### Do not commit
+
+- `.venv/`;
+- `__pycache__/` and `*.pyc`;
+- notebook checkpoints;
+- local editor settings;
+- logs and PID files;
+- `.env` files, keys, or credentials;
+- raw PrimeKG `kg.csv`;
+- future raw/downloaded datasets under `data/raw/` or `data/downloads/`.
+
+### Decide before the first public commit
+
+Two included archive artifacts exceed 25 MB:
+
+| File | Bytes | Approximate size | GitHub 100 MB limit |
+|---|---:|---:|---|
+| `data/processed/rgcn_tensors/G3.pt` | 54,594,810 | 52.066 MB | below limit |
+| `checkpoints/rgcn_multiseed/G3_seed44_best.pt` | 26,446,322 | 25.221 MB | below limit |
+
+No file exceeds GitHub's normal 100 MB per-file limit. Nevertheless, committing binary model/tensor artifacts directly makes repository history permanently large. If they are retained for academic reproducibility, Git LFS or a versioned release/archive is preferable. If the repository is intended only for Level-1 demonstration, they can be distributed separately with checksums—but they must not be deleted merely to reduce repository size.
+
+Release decisions and verified third-party status:
+
+- **Still requires Team CHEERS approval:** choose a license for original CHEERS code. No project license is currently granted.
+- **Verified source metadata:** the official PrimeKG code repository is MIT-licensed, while the published Harvard Dataverse PrimeKG dataset record reports CC0 1.0. PrimeKG also warns that original upstream data sources can have separate terms; see `THIRD_PARTY_NOTICES.md`.
+- **Completed:** earlier manifests are retained as historical release records, while the versioned V3 manifest is the current operational integrity inventory.
+- **Recommended packaging choice:** use Git LFS or versioned release assets for the two archival `.pt` files if the full academic archive is published. They are not required by the Level-1 NumPy application and were not deleted or rewritten here.
+
+## Limitations
+
+- The final experiment uses PrimeKG only.
+- The target is PrimeKG's synergistic-interaction `drug_drug` relation, not every clinical DDI type.
+- One principal GNN architecture was evaluated.
+- Robustness evaluation used five seeds.
+- Statistical significance is not claimed.
+- Evaluation is transductive; held-out entities remain known.
+- Sampled unobserved negatives are not confirmed non-interactions.
+- The study performs coarse relation-family ablation, not per-relation ablation.
+- Knowledge-graph incompleteness and source bias can affect training and evaluation.
+- Raw model scores are not calibrated probabilities.
+- Graph context is not a causal explanation of a prediction.
+- An unobserved predicted link is not a confirmed interaction.
+- Full preprocessing and retraining assets are not included in this portable folder.
+- The application is a research demonstration, not clinical decision support.
+- No medication or prescribing guidance should be derived from its output.
+
+## Future work
+
+- per-relation ablation;
+- more seeds and bootstrap uncertainty estimates;
+- stronger GNN and knowledge-graph baselines;
+- inductive and cold-start evaluation;
+- external DDI validation;
+- calibrated classification where scientifically appropriate;
+- additional biomedical data sources;
+- broader DailyMed/openFDA coverage and synonym-aware label matching;
+- systematic, protocol-driven literature review beyond the current conservative PubMed lookup;
+- pair-level explanatory paths;
+- stronger UI communication of relation semantics.
+
+The current application already retrieves bounded openFDA label evidence and PubMed records. It deliberately displays source-backed text without LLM summarization and does not convert retrieved or missing evidence into clinical conclusions.
+
+## Safety and responsible use
+
+**Research use only.**
+
+Predicted candidates represent unobserved links according to the model and PrimeKG target relation. Model scores are ranking values, not probabilities. Results must not be used for:
+
+- prescribing medication;
+- stopping medication;
+- changing doses;
+- determining whether a drug combination is safe;
+- determining whether a drug combination is dangerous;
+- making clinical decisions.
+
+Graph context is descriptive knowledge-graph context, not causal medical evidence. Any clinical interpretation requires qualified professionals and appropriate external evidence.
+
+## Acknowledgment
+
+This repository documents a Computer Science graduation project by **Team CHEERS** at **Pusan National University**. The final experiment is based on PrimeKG-derived graph data. No individual team-member names are listed because none are present in the portable project metadata.
